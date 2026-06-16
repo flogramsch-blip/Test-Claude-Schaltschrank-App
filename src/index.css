@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+:root {
+  --rail-bg: #dde3e9;
+  --rail-metal: #9ca3af;
+  --rail-dark: #4b5563;
+  --component-housing: #1e293b;
+  --component-face: #334155;
+  --component-text: #e2e8f0;
+  --accent-orange: #f97316;
+  --connection-idle: #94a3b8;
+  --connection-hover: #22c55e;
+  --connection-active: #3b82f6;
+  --selection: #f59e0b;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #0f172a;
+  color: #f1f5f9;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  user-select: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #1e293b; }
+::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+@keyframes flow {
+  from { stroke-dashoffset: 20; }
+  to   { stroke-dashoffset: 0; }
+}
+
+.wire-animated {
+  stroke-dasharray: 6 4;
+  animation: flow 0.6s linear infinite;
+}
+
+@keyframes trip-flash {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+.tripped-overlay {
+  animation: trip-flash 0.8s ease-in-out infinite;
+}
