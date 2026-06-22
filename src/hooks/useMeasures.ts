@@ -1,0 +1,78 @@
+import { useEffect, useState } from "react";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  orderBy,
+  query,
+  serverTimestamp,
+  updateDoc,
+} from "firebase/firestore";
+import { db, auth } from "../lib/firebase";
+import type { Measure } from "../types";
+
+export function useMeasures(householdId: string | null) {
+  const [measures, setMeasures] = useState<Measure[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!householdId) {
+      setMeasures([]);
+      setLoading(false);
+      return;
+    }
+    const q = query(
+      collection(db, "households", householdId, "measures"),
+      orderBy("createdAt", "desc"),
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      setMeasures(
+        snap.docs.map((d) => {
+          const data = d.data();
+          return {
+            id: d.id,
+            ...data,
+            createdAt: data.createdAt?.toMillis?.() ?? 0,
+            updatedAt: data.updatedAt?.toMillis?.() ?? 0,
+          } as Measure;
+        }),
+      );
+      setLoading(false);
+    });
+    return unsub;
+  }, [householdId]);
+
+  async function addMeasure(
+    data: Omit<Measure, "id" | "createdBy" | "updatedBy" | "createdAt" | "updatedAt">,
+  ) {
+    if (!householdId || !auth.currentUser) return;
+    await addDoc(collection(db, "households", householdId, "measures"), {
+      ...data,
+      createdBy: auth.currentUser.uid,
+      updatedBy: auth.currentUser.uid,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+  async function updateMeasure(
+    id: string,
+    data: Partial<Omit<Measure, "id" | "createdBy" | "createdAt">>,
+  ) {
+    if (!householdId || !auth.currentUser) return;
+    await updateDoc(doc(db, "households", householdId, "measures", id), {
+      ...data,
+      updatedBy: auth.currentUser.uid,
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+  async function deleteMeasure(id: string) {
+    if (!householdId) return;
+    await deleteDoc(doc(db, "households", householdId, "measures", id));
+  }
+
+  return { measures, loading, addMeasure, updateMeasure, deleteMeasure };
+}

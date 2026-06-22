@@ -1,0 +1,80 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: -apple-system, "SF Pro Text", "SF Pro Display", "Inter", "Segoe UI", Roboto, sans-serif;
+
+  /* iOS system palette (light) */
+  --color-ios-blue: #007aff;
+  --color-ios-green: #34c759;
+  --color-ios-red: #ff3b30;
+  --color-ios-orange: #ff9500;
+  --color-ios-yellow: #ffcc00;
+  --color-ios-purple: #af52de;
+  --color-ios-teal: #5ac8fa;
+  --color-ios-pink: #ff2d55;
+  --color-ios-gray: #8e8e93;
+
+  /* Light surfaces */
+  --color-surface: #ffffff;
+  --color-surface-secondary: #f2f2f7;
+  --color-surface-grouped: #f2f2f7;
+  --color-separator: rgba(60, 60, 67, 0.29);
+  --color-label: #000000;
+  --color-label-secondary: rgba(60, 60, 67, 0.6);
+  --color-label-tertiary: rgba(60, 60, 67, 0.3);
+
+  /* True AMOLED dark surfaces */
+  --color-surface-dark: #000000;
+  --color-surface-secondary-dark: #0d0d0d;
+  --color-surface-grouped-dark: #000000;
+  --color-surface-elevated-dark: #1c1c1e;
+  --color-separator-dark: rgba(84, 84, 88, 0.65);
+  --color-label-dark: #ffffff;
+  --color-label-secondary-dark: rgba(235, 235, 245, 0.6);
+  --color-label-tertiary-dark: rgba(235, 235, 245, 0.3);
+}
+
+html {
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--color-surface-grouped);
+  color: var(--color-label);
+  overscroll-behavior-y: none;
+}
+
+html.dark body {
+  background: var(--color-surface-grouped-dark);
+  color: var(--color-label-dark);
+}
+
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  font-family: inherit;
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+}
