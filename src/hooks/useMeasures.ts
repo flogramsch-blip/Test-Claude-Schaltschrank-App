@@ -8,6 +8,8 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  setDoc,
+  Timestamp,
   updateDoc,
 } from "firebase/firestore";
 import { db, auth } from "../lib/firebase";
@@ -89,5 +91,15 @@ export function useMeasures(householdId: string | null) {
     await deleteDoc(doc(db, "households", householdId, "measures", id));
   }
 
-  return { measures, loading, addMeasure, updateMeasure, deleteMeasure };
+  async function restoreMeasure(measure: Measure) {
+    if (!householdId) return;
+    const { id, createdAt, updatedAt, ...rest } = measure;
+    await setDoc(doc(db, "households", householdId, "measures", id), {
+      ...rest,
+      createdAt: Timestamp.fromMillis(createdAt),
+      updatedAt: Timestamp.fromMillis(updatedAt),
+    });
+  }
+
+  return { measures, loading, addMeasure, updateMeasure, deleteMeasure, restoreMeasure };
 }

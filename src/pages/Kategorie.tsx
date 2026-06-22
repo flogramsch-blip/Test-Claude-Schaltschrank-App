@@ -5,8 +5,10 @@ import { useAuth } from "../contexts/AuthContext";
 import { useMeasures } from "../hooks/useMeasures";
 import { useMeasureTypes } from "../hooks/useMeasureTypes";
 import { useCategories } from "../hooks/useCategories";
+import { useUndoableDelete } from "../hooks/useUndoableDelete";
 import { Screen } from "../components/ui/Screen";
 import { CardGroup } from "../components/ui/Card";
+import { Snackbar } from "../components/ui/Snackbar";
 import { MeasureFormSheet } from "../components/measures/MeasureFormSheet";
 import { MeasureInfoDisclosure } from "../components/measures/MeasureInfoDisclosure";
 import { formatEuro } from "../lib/format";
@@ -17,9 +19,14 @@ export function Kategorie() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const householdId = user?.householdId ?? null;
-  const { measures, addMeasure, updateMeasure, deleteMeasure } = useMeasures(householdId);
+  const { measures, addMeasure, updateMeasure, deleteMeasure, restoreMeasure } = useMeasures(householdId);
   const { types } = useMeasureTypes(householdId);
   const { categories } = useCategories(householdId);
+  const { deletedMeasure, handleDelete, handleUndo, dismiss } = useUndoableDelete(
+    measures,
+    deleteMeasure,
+    restoreMeasure,
+  );
 
   const [editing, setEditing] = useState<Measure | null>(null);
   const [showSheet, setShowSheet] = useState(false);
@@ -70,7 +77,7 @@ export function Kategorie() {
             measure={m}
             type={typeById.get(m.typeId)}
             onEdit={() => openEdit(m)}
-            onDelete={() => deleteMeasure(m.id)}
+            onDelete={() => handleDelete(m.id)}
           />
         ))}
         {items.length === 0 && (
@@ -92,6 +99,14 @@ export function Kategorie() {
           deleteMeasure={deleteMeasure}
         />
       )}
+
+      <Snackbar
+        open={!!deletedMeasure}
+        message={deletedMeasure ? `„${deletedMeasure.name}" gelöscht` : ""}
+        actionLabel="Rückgängig"
+        onAction={handleUndo}
+        onDismiss={dismiss}
+      />
     </Screen>
   );
 }

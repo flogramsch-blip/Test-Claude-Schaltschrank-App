@@ -68,6 +68,7 @@ export interface Household {
   name: string;
   inviteCode: string;
   memberIds: string[];
+  houseLabel?: string;
 }
 
 export interface AppUser {

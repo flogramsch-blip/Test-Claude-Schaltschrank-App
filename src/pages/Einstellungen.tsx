@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { useMeasureTypes } from "../hooks/useMeasureTypes";
 import { useCategories } from "../hooks/useCategories";
+import { useHousehold } from "../hooks/useHousehold";
 import { Screen } from "../components/ui/Screen";
 import { CardGroup } from "../components/ui/Card";
 import { ListCell } from "../components/ui/ListCell";
@@ -12,8 +13,6 @@ import { BottomSheet } from "../components/ui/BottomSheet";
 import { Field } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
 import { registerForPushNotifications } from "../lib/notifications";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../lib/firebase";
 
 const SWATCHES = ["#34c759", "#007aff", "#ff9500", "#ff3b30", "#af52de", "#5ac8fa", "#ff2d55", "#8e8e93"];
 
@@ -23,8 +22,8 @@ export function Einstellungen() {
   const householdId = user?.householdId ?? null;
   const { types, addType, updateType, deleteType } = useMeasureTypes(householdId);
   const { categories, addCategory, updateCategory, deleteCategory } = useCategories(householdId);
+  const { household, updateHousehold } = useHousehold(householdId);
 
-  const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [showSheet, setShowSheet] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", color: SWATCHES[0], taxFree: false });
@@ -32,13 +31,19 @@ export function Einstellungen() {
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [categoryForm, setCategoryForm] = useState({ name: "", color: SWATCHES[0] });
   const [notifStatus, setNotifStatus] = useState<"idle" | "requesting" | "on">("idle");
+  const [showHouseLabelSheet, setShowHouseLabelSheet] = useState(false);
+  const [houseLabel, setHouseLabel] = useState("");
 
-  useEffect(() => {
-    if (!householdId) return;
-    getDoc(doc(db, "households", householdId)).then((snap) => {
-      setInviteCode((snap.data()?.inviteCode as string) ?? null);
-    });
-  }, [householdId]);
+  function openHouseLabelSheet() {
+    setHouseLabel(household?.houseLabel ?? "");
+    setShowHouseLabelSheet(true);
+  }
+
+  async function handleHouseLabelSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    await updateHousehold({ houseLabel });
+    setShowHouseLabelSheet(false);
+  }
 
   function openNewType() {
     setEditingId(null);
@@ -167,7 +172,13 @@ export function Einstellungen() {
       </CardGroup>
 
       <CardGroup title="Haushalt">
-        <ListCell label="Einladungscode" value={inviteCode ?? "–"} />
+        <ListCell
+          label="Hausname"
+          value={household?.houseLabel || "Nicht gesetzt"}
+          chevron
+          onClick={openHouseLabelSheet}
+        />
+        <ListCell label="Einladungscode" value={household?.inviteCode ?? "–"} />
       </CardGroup>
 
       <CardGroup>
@@ -264,6 +275,24 @@ export function Einstellungen() {
               </span>
             </Button>
           )}
+        </form>
+      </BottomSheet>
+
+      <BottomSheet
+        open={showHouseLabelSheet}
+        title="Hausname"
+        onClose={() => setShowHouseLabelSheet(false)}
+      >
+        <form onSubmit={handleHouseLabelSubmit} className="space-y-3">
+          <Field
+            label="Name"
+            value={houseLabel}
+            onChange={(e) => setHouseLabel(e.target.value)}
+            placeholder="z. B. Jungfernstieg 16A unser Haus"
+          />
+          <Button type="submit" fullWidth>
+            Speichern
+          </Button>
         </form>
       </BottomSheet>
     </Screen>

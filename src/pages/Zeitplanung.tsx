@@ -6,10 +6,12 @@ import { useAuth } from "../contexts/AuthContext";
 import { useMeasures } from "../hooks/useMeasures";
 import { useMeasureTypes } from "../hooks/useMeasureTypes";
 import { useCategories } from "../hooks/useCategories";
+import { useUndoableDelete } from "../hooks/useUndoableDelete";
 import { Screen } from "../components/ui/Screen";
 import { CardGroup, Card } from "../components/ui/Card";
 import { SegmentedControl } from "../components/ui/SegmentedControl";
 import { Calendar } from "../components/ui/Calendar";
+import { Snackbar } from "../components/ui/Snackbar";
 import { MeasureFormSheet } from "../components/measures/MeasureFormSheet";
 import { MeasureInfoDisclosure } from "../components/measures/MeasureInfoDisclosure";
 import { Timeline } from "../components/measures/Timeline";
@@ -20,9 +22,14 @@ type View = "liste" | "kalender";
 export function Zeitplanung() {
   const { user } = useAuth();
   const householdId = user?.householdId ?? null;
-  const { measures, addMeasure, updateMeasure, deleteMeasure } = useMeasures(householdId);
+  const { measures, addMeasure, updateMeasure, deleteMeasure, restoreMeasure } = useMeasures(householdId);
   const { types } = useMeasureTypes(householdId);
   const { categories } = useCategories(householdId);
+  const { deletedMeasure, handleDelete, handleUndo, dismiss } = useUndoableDelete(
+    measures,
+    deleteMeasure,
+    restoreMeasure,
+  );
 
   const [view, setView] = useState<View>("liste");
   const [month, setMonth] = useState(new Date());
@@ -90,7 +97,7 @@ export function Zeitplanung() {
       </div>
 
       {view === "liste" ? (
-        <Timeline measures={planned} typeById={typeById} onEdit={openEdit} onDelete={deleteMeasure} />
+        <Timeline measures={planned} typeById={typeById} onEdit={openEdit} onDelete={handleDelete} />
       ) : (
         <>
           <Card className="mb-4 p-4">
@@ -110,7 +117,7 @@ export function Zeitplanung() {
                   measure={m}
                   type={typeById.get(m.typeId)}
                   onEdit={() => openEdit(m)}
-                  onDelete={() => deleteMeasure(m.id)}
+                  onDelete={() => handleDelete(m.id)}
                 />
               ))}
               {dayItems.length === 0 && (
@@ -135,6 +142,14 @@ export function Zeitplanung() {
           deleteMeasure={deleteMeasure}
         />
       )}
+
+      <Snackbar
+        open={!!deletedMeasure}
+        message={deletedMeasure ? `„${deletedMeasure.name}" gelöscht` : ""}
+        actionLabel="Rückgängig"
+        onAction={handleUndo}
+        onDismiss={dismiss}
+      />
     </Screen>
   );
 }

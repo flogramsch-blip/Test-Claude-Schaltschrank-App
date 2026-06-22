@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ChevronDown, ExternalLink, Pencil, Trash2 } from "lucide-react";
 import clsx from "clsx";
 import type { Measure, MeasureType } from "../../types";
@@ -25,75 +25,47 @@ function Row({ label, value }: { label: string; value: string }) {
 
 export function MeasureInfoDisclosure({ measure, type, onEdit, onDelete }: MeasureInfoDisclosureProps) {
   const [open, setOpen] = useState(false);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const net = netCostAfterFunding(measure.istCost, measure.fundingEntries);
-
-  useEffect(() => {
-    if (!confirmingDelete) return;
-    const timer = setTimeout(() => setConfirmingDelete(false), 4000);
-    return () => clearTimeout(timer);
-  }, [confirmingDelete]);
 
   return (
     <div className="px-4 py-3">
-      {confirmingDelete ? (
-        <div className="flex w-full items-center justify-between gap-3">
-          <span className="text-[15px] text-label dark:text-label-dark">Wirklich löschen?</span>
-          <div className="flex shrink-0 items-center gap-4">
-            <button
-              onClick={() => setConfirmingDelete(false)}
-              className="text-[13px] font-medium text-label-secondary dark:text-label-secondary-dark"
-            >
-              Abbrechen
-            </button>
-            <button onClick={onDelete} className="text-[13px] font-semibold text-ios-red">
-              Löschen
-            </button>
+      <div className="flex w-full items-center gap-3">
+        <button
+          onClick={() => setOpen((o) => !o)}
+          className="flex min-w-0 flex-1 items-center gap-3 text-left"
+        >
+          <span
+            className="h-2.5 w-2.5 shrink-0 rounded-full"
+            style={{ background: type?.color ?? "#8e8e93" }}
+          />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[15px] text-label dark:text-label-dark">{measure.name}</p>
+            <p className="text-xs text-label-secondary dark:text-label-secondary-dark">
+              {STATUS_LABELS[measure.status]}
+              {measure.plannedStart ? ` · ${formatDate(measure.plannedStart)}` : ""}
+            </p>
           </div>
-        </div>
-      ) : (
-        <div className="flex w-full items-center gap-3">
-          <button
-            onClick={() => setOpen((o) => !o)}
-            className="flex min-w-0 flex-1 items-center gap-3 text-left"
-          >
-            <span
-              className="h-2.5 w-2.5 shrink-0 rounded-full"
-              style={{ background: type?.color ?? "#8e8e93" }}
-            />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[15px] text-label dark:text-label-dark">{measure.name}</p>
-              <p className="text-xs text-label-secondary dark:text-label-secondary-dark">
-                {STATUS_LABELS[measure.status]}
-                {measure.plannedStart ? ` · ${formatDate(measure.plannedStart)}` : ""}
-              </p>
-            </div>
-            <span className="shrink-0 text-[15px] font-medium text-label dark:text-label-dark">
-              {formatEuro(measure.istCost ?? measure.sollCost)}
-            </span>
+          <span className="shrink-0 text-[15px] font-medium text-label dark:text-label-dark">
+            {formatEuro(measure.istCost ?? measure.sollCost)}
+          </span>
+        </button>
+        {onDelete && (
+          <button onClick={onDelete} aria-label="Maßnahme löschen" className="shrink-0 text-ios-red">
+            <Trash2 size={18} />
           </button>
-          {onDelete && (
-            <button
-              onClick={() => setConfirmingDelete(true)}
-              aria-label="Maßnahme löschen"
-              className="shrink-0 text-ios-red"
-            >
-              <Trash2 size={18} />
-            </button>
-          )}
-          <button onClick={() => setOpen((o) => !o)} aria-label="Details ein-/ausblenden" className="shrink-0">
-            <ChevronDown
-              size={18}
-              className={clsx(
-                "text-label-tertiary transition-transform dark:text-label-tertiary-dark",
-                open && "rotate-180",
-              )}
-            />
-          </button>
-        </div>
-      )}
+        )}
+        <button onClick={() => setOpen((o) => !o)} aria-label="Details ein-/ausblenden" className="shrink-0">
+          <ChevronDown
+            size={18}
+            className={clsx(
+              "text-label-tertiary transition-transform dark:text-label-tertiary-dark",
+              open && "rotate-180",
+            )}
+          />
+        </button>
+      </div>
 
-      {open && !confirmingDelete && (
+      {open && (
         <div className="mt-2 rounded-xl bg-surface-secondary px-3 py-2 dark:bg-black/30">
           <Row label="Firma" value={measure.company} />
           <Row label="Ort" value={measure.location} />
