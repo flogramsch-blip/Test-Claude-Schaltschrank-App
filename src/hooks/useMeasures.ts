@@ -30,12 +30,27 @@ export function useMeasures(householdId: string | null) {
     const unsub = onSnapshot(q, (snap) => {
       setMeasures(
         snap.docs.map((d) => {
-          const data = d.data();
+          const raw = d.data();
+          const data = raw as Partial<Measure>;
           return {
-            id: d.id,
+            categoryId: "",
+            company: "",
+            location: "",
+            contact: "",
+            supervisor: "",
+            material: "",
+            isFundable: false,
+            fundingPercent: null,
+            energyConsultantRequested: false,
+            offerObtained: false,
+            attachments: [],
+            fundingEntries: [],
+            plannedStart: null,
+            plannedEnd: null,
             ...data,
-            createdAt: data.createdAt?.toMillis?.() ?? 0,
-            updatedAt: data.updatedAt?.toMillis?.() ?? 0,
+            id: d.id,
+            createdAt: raw.createdAt?.toMillis?.() ?? 0,
+            updatedAt: raw.updatedAt?.toMillis?.() ?? 0,
           } as Measure;
         }),
       );
