@@ -10,8 +10,9 @@ import { CardGroup, Card } from "../components/ui/Card";
 import { ListCell } from "../components/ui/ListCell";
 import { ProgressBar } from "../components/ui/ProgressBar";
 import { MeasureFormSheet } from "../components/measures/MeasureFormSheet";
-import { formatEuro, formatDate } from "../lib/format";
-import { STATUS_LABELS } from "../types";
+import { MeasureInfoDisclosure } from "../components/measures/MeasureInfoDisclosure";
+import { formatEuro } from "../lib/format";
+import type { Measure } from "../types";
 
 export function Home() {
   const navigate = useNavigate();
@@ -21,7 +22,10 @@ export function Home() {
   const { categories } = useCategories(householdId);
   const { types } = useMeasureTypes(householdId);
 
+  const [editing, setEditing] = useState<Measure | null>(null);
   const [showSheet, setShowSheet] = useState(false);
+
+  const typeById = useMemo(() => new Map(types.map((t) => [t.id, t])), [types]);
 
   const totals = useMemo(() => {
     const soll = measures.reduce((sum, m) => sum + m.sollCost, 0);
@@ -42,10 +46,34 @@ export function Home() {
     });
   }, [measures, categories]);
 
-  const recent = useMemo(
-    () => [...measures].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 5),
+  const byType = useMemo(() => {
+    return types
+      .map((type) => {
+        const items = measures.filter((m) => m.typeId === type.id);
+        return {
+          type,
+          soll: items.reduce((sum, m) => sum + m.sollCost, 0),
+          ist: items.reduce((sum, m) => sum + (m.istCost ?? 0), 0),
+          count: items.length,
+        };
+      })
+      .filter((t) => t.count > 0);
+  }, [measures, types]);
+
+  const sortedMeasures = useMemo(
+    () => [...measures].sort((a, b) => b.updatedAt - a.updatedAt),
     [measures],
   );
+
+  function openNew() {
+    setEditing(null);
+    setShowSheet(true);
+  }
+
+  function openEdit(m: Measure) {
+    setEditing(m);
+    setShowSheet(true);
+  }
 
   return (
     <Screen
@@ -53,7 +81,7 @@ export function Home() {
       subtitle={`Hallo, ${user?.displayName ?? ""} 👋`}
       trailing={
         <button
-          onClick={() => setShowSheet(true)}
+          onClick={openNew}
           className="rounded-full bg-ios-blue p-2 text-white"
           aria-label="Maßnahme hinzufügen"
         >
@@ -106,30 +134,47 @@ export function Home() {
         )}
       </CardGroup>
 
-      <CardGroup title="Zuletzt aktualisiert">
-        {recent.map((m) => (
-          <div key={m.id} className="flex items-center justify-between px-4 py-3">
-            <div>
-              <p className="text-[15px] text-label dark:text-label-dark">{m.name}</p>
-              <p className="text-xs text-label-secondary dark:text-label-secondary-dark">
-                {STATUS_LABELS[m.status]} · {formatDate(m.updatedAt)}
-              </p>
-            </div>
-            <p className="text-[15px] font-medium text-label dark:text-label-dark">
-              {formatEuro(m.istCost ?? m.sollCost)}
-            </p>
-          </div>
+      <CardGroup title="Aufschlüsselung nach Art">
+        {byType.map(({ type, soll, ist, count }) => (
+          <ListCell
+            key={type.id}
+            leading={<span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: type.color }} />}
+            label={
+              <span>
+                {type.name}{" "}
+                <span className="text-xs text-label-tertiary dark:text-label-tertiary-dark">({count})</span>
+              </span>
+            }
+            value={`${formatEuro(ist)} / ${formatEuro(soll)}`}
+          />
         ))}
-        {recent.length === 0 && (
+        {byType.length === 0 && (
           <p className="px-4 py-6 text-center text-sm text-label-secondary dark:text-label-secondary-dark">
             Noch keine Maßnahmen erfasst.
           </p>
         )}
       </CardGroup>
 
+      <CardGroup title="Alle Maßnahmen">
+        {sortedMeasures.map((m) => (
+          <MeasureInfoDisclosure
+            key={m.id}
+            measure={m}
+            type={typeById.get(m.typeId)}
+            onEdit={() => openEdit(m)}
+            onDelete={() => deleteMeasure(m.id)}
+          />
+        ))}
+        {sortedMeasures.length === 0 && (
+          <p className="px-4 py-8 text-center text-sm text-label-secondary dark:text-label-secondary-dark">
+            Noch keine Maßnahmen. Tippe auf + um die erste hinzuzufügen.
+          </p>
+        )}
+      </CardGroup>
+
       {showSheet && (
         <MeasureFormSheet
-          editing={null}
+          editing={editing}
           categories={categories}
           types={types}
           onClose={() => setShowSheet(false)}

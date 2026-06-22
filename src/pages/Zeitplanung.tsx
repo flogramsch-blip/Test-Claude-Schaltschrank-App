@@ -12,6 +12,7 @@ import { SegmentedControl } from "../components/ui/SegmentedControl";
 import { Calendar } from "../components/ui/Calendar";
 import { MeasureFormSheet } from "../components/measures/MeasureFormSheet";
 import { MeasureInfoDisclosure } from "../components/measures/MeasureInfoDisclosure";
+import { Timeline } from "../components/measures/Timeline";
 import type { Measure } from "../types";
 
 type View = "liste" | "kalender";
@@ -38,15 +39,6 @@ export function Zeitplanung() {
         .sort((a, b) => (a.plannedStart ?? 0) - (b.plannedStart ?? 0)),
     [measures],
   );
-
-  const grouped = useMemo(() => {
-    const groups = new Map<string, Measure[]>();
-    for (const m of planned) {
-      const key = format(new Date(m.plannedStart!), "MMMM yyyy", { locale: de });
-      groups.set(key, [...(groups.get(key) ?? []), m]);
-    }
-    return Array.from(groups.entries());
-  }, [planned]);
 
   const markerCounts = useMemo(() => {
     const map = new Map<string, number>();
@@ -98,20 +90,7 @@ export function Zeitplanung() {
       </div>
 
       {view === "liste" ? (
-        <>
-          {grouped.map(([label, items]) => (
-            <CardGroup key={label} title={label}>
-              {items.map((m) => (
-                <MeasureInfoDisclosure key={m.id} measure={m} type={typeById.get(m.typeId)} onEdit={() => openEdit(m)} />
-              ))}
-            </CardGroup>
-          ))}
-          {planned.length === 0 && (
-            <p className="px-1 py-8 text-center text-sm text-label-secondary dark:text-label-secondary-dark">
-              Noch keine Termine geplant. Tippe auf + um eine anstehende Maßnahme einzutragen.
-            </p>
-          )}
-        </>
+        <Timeline measures={planned} typeById={typeById} onEdit={openEdit} onDelete={deleteMeasure} />
       ) : (
         <>
           <Card className="mb-4 p-4">
@@ -126,7 +105,13 @@ export function Zeitplanung() {
           {selectedDate && (
             <CardGroup title={format(selectedDate, "d. MMMM yyyy", { locale: de })}>
               {dayItems.map((m) => (
-                <MeasureInfoDisclosure key={m.id} measure={m} type={typeById.get(m.typeId)} onEdit={() => openEdit(m)} />
+                <MeasureInfoDisclosure
+                  key={m.id}
+                  measure={m}
+                  type={typeById.get(m.typeId)}
+                  onEdit={() => openEdit(m)}
+                  onDelete={() => deleteMeasure(m.id)}
+                />
               ))}
               {dayItems.length === 0 && (
                 <p className="px-4 py-6 text-center text-sm text-label-secondary dark:text-label-secondary-dark">

@@ -65,7 +65,13 @@ export function Kategorie() {
     >
       <CardGroup>
         {items.map((m) => (
-          <MeasureInfoDisclosure key={m.id} measure={m} type={typeById.get(m.typeId)} onEdit={() => openEdit(m)} />
+          <MeasureInfoDisclosure
+            key={m.id}
+            measure={m}
+            type={typeById.get(m.typeId)}
+            onEdit={() => openEdit(m)}
+            onDelete={() => deleteMeasure(m.id)}
+          />
         ))}
         {items.length === 0 && (
           <p className="px-4 py-8 text-center text-sm text-label-secondary dark:text-label-secondary-dark">
