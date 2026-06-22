@@ -3,6 +3,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { useMeasureTypes } from "../hooks/useMeasureTypes";
+import { useCategories } from "../hooks/useCategories";
 import { Screen } from "../components/ui/Screen";
 import { CardGroup } from "../components/ui/Card";
 import { ListCell } from "../components/ui/ListCell";
@@ -21,11 +22,15 @@ export function Einstellungen() {
   const { mode, setMode } = useTheme();
   const householdId = user?.householdId ?? null;
   const { types, addType, updateType, deleteType } = useMeasureTypes(householdId);
+  const { categories, addCategory, updateCategory, deleteCategory } = useCategories(householdId);
 
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [showSheet, setShowSheet] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", color: SWATCHES[0], taxFree: false });
+  const [showCategorySheet, setShowCategorySheet] = useState(false);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [categoryForm, setCategoryForm] = useState({ name: "", color: SWATCHES[0] });
   const [notifStatus, setNotifStatus] = useState<"idle" | "requesting" | "on">("idle");
 
   useEffect(() => {
@@ -65,6 +70,36 @@ export function Einstellungen() {
     setShowSheet(false);
   }
 
+  function openNewCategory() {
+    setEditingCategoryId(null);
+    setCategoryForm({ name: "", color: SWATCHES[0] });
+    setShowCategorySheet(true);
+  }
+
+  function openEditCategory(id: string) {
+    const c = categories.find((x) => x.id === id);
+    if (!c) return;
+    setEditingCategoryId(id);
+    setCategoryForm({ name: c.name, color: c.color });
+    setShowCategorySheet(true);
+  }
+
+  async function handleCategorySubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (editingCategoryId) {
+      await updateCategory(editingCategoryId, categoryForm);
+    } else {
+      await addCategory({ ...categoryForm, order: categories.length });
+    }
+    setShowCategorySheet(false);
+  }
+
+  async function handleCategoryDelete() {
+    if (!editingCategoryId) return;
+    await deleteCategory(editingCategoryId);
+    setShowCategorySheet(false);
+  }
+
   async function handleEnableNotifications() {
     if (!firebaseUser) return;
     setNotifStatus("requesting");
@@ -74,6 +109,23 @@ export function Einstellungen() {
 
   return (
     <Screen title="Einstellungen">
+      <CardGroup title="Kategorien">
+        {categories.map((c) => (
+          <ListCell
+            key={c.id}
+            leading={<span className="h-3 w-3 shrink-0 rounded-full" style={{ background: c.color }} />}
+            label={c.name}
+            chevron
+            onClick={() => openEditCategory(c.id)}
+          />
+        ))}
+        <ListCell
+          leading={<Plus size={18} className="text-ios-blue" />}
+          label={<span className="text-ios-blue">Neue Kategorie hinzufügen</span>}
+          onClick={openNewCategory}
+        />
+      </CardGroup>
+
       <CardGroup title="Maßnahmenarten">
         {types.map((t) => (
           <ListCell
@@ -165,6 +217,48 @@ export function Einstellungen() {
           </Button>
           {editingId && (
             <Button type="button" variant="destructive" fullWidth onClick={handleDelete}>
+              <span className="flex items-center justify-center gap-2">
+                <Trash2 size={16} /> Löschen
+              </span>
+            </Button>
+          )}
+        </form>
+      </BottomSheet>
+
+      <BottomSheet
+        open={showCategorySheet}
+        title={editingCategoryId ? "Kategorie bearbeiten" : "Neue Kategorie"}
+        onClose={() => setShowCategorySheet(false)}
+      >
+        <form onSubmit={handleCategorySubmit} className="space-y-3">
+          <Field
+            label="Name"
+            value={categoryForm.name}
+            onChange={(e) => setCategoryForm((f) => ({ ...f, name: e.target.value }))}
+            placeholder="z. B. Ausstattung"
+            required
+          />
+          <div>
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-label-secondary dark:text-label-secondary-dark">
+              Farbe
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {SWATCHES.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setCategoryForm((f) => ({ ...f, color: c }))}
+                  className="h-8 w-8 rounded-full ring-offset-2"
+                  style={{ background: c, boxShadow: categoryForm.color === c ? `0 0 0 2px ${c}` : undefined }}
+                />
+              ))}
+            </div>
+          </div>
+          <Button type="submit" fullWidth>
+            {editingCategoryId ? "Speichern" : "Hinzufügen"}
+          </Button>
+          {editingCategoryId && (
+            <Button type="button" variant="destructive" fullWidth onClick={handleCategoryDelete}>
               <span className="flex items-center justify-center gap-2">
                 <Trash2 size={16} /> Löschen
               </span>

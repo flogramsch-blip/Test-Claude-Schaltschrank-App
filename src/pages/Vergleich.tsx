@@ -1,79 +1,37 @@
 import { useMemo, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useMeasures } from "../hooks/useMeasures";
 import { useMeasureTypes } from "../hooks/useMeasureTypes";
+import { useCategories } from "../hooks/useCategories";
 import { Screen } from "../components/ui/Screen";
 import { CardGroup } from "../components/ui/Card";
-import { BottomSheet } from "../components/ui/BottomSheet";
-import { Field } from "../components/ui/Input";
-import { Button } from "../components/ui/Button";
+import { MeasureFormSheet } from "../components/measures/MeasureFormSheet";
 import { formatEuro } from "../lib/format";
-import { STATUS_LABELS, type Measure, type MeasureStatus } from "../types";
-
-const EMPTY_FORM = {
-  name: "",
-  typeId: "",
-  sollCost: "",
-  istCost: "",
-  status: "geplant" as MeasureStatus,
-  notes: "",
-};
+import { STATUS_LABELS, type Measure } from "../types";
 
 export function Vergleich() {
   const { user } = useAuth();
   const householdId = user?.householdId ?? null;
   const { measures, addMeasure, updateMeasure, deleteMeasure } = useMeasures(householdId);
   const { types } = useMeasureTypes(householdId);
+  const { categories } = useCategories(householdId);
 
   const [editing, setEditing] = useState<Measure | null>(null);
   const [showSheet, setShowSheet] = useState(false);
-  const [form, setForm] = useState(EMPTY_FORM);
 
   const sorted = useMemo(() => [...measures].sort((a, b) => a.name.localeCompare(b.name)), [measures]);
   const typeById = useMemo(() => new Map(types.map((t) => [t.id, t])), [types]);
+  const categoryById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
 
   function openNew() {
     setEditing(null);
-    setForm({ ...EMPTY_FORM, typeId: types[0]?.id ?? "" });
     setShowSheet(true);
   }
 
   function openEdit(m: Measure) {
     setEditing(m);
-    setForm({
-      name: m.name,
-      typeId: m.typeId,
-      sollCost: String(m.sollCost),
-      istCost: m.istCost === null ? "" : String(m.istCost),
-      status: m.status,
-      notes: m.notes,
-    });
     setShowSheet(true);
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const payload = {
-      name: form.name,
-      typeId: form.typeId,
-      sollCost: Number(form.sollCost) || 0,
-      istCost: form.istCost === "" ? null : Number(form.istCost),
-      status: form.status,
-      notes: form.notes,
-    };
-    if (editing) {
-      await updateMeasure(editing.id, payload);
-    } else {
-      await addMeasure(payload);
-    }
-    setShowSheet(false);
-  }
-
-  async function handleDelete() {
-    if (!editing) return;
-    await deleteMeasure(editing.id);
-    setShowSheet(false);
   }
 
   return (
@@ -93,6 +51,7 @@ export function Vergleich() {
       <CardGroup>
         {sorted.map((m) => {
           const type = typeById.get(m.typeId);
+          const category = categoryById.get(m.categoryId);
           const diff = (m.istCost ?? 0) - m.sollCost;
           return (
             <button
@@ -107,7 +66,7 @@ export function Vergleich() {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[15px] text-label dark:text-label-dark">{m.name}</p>
                 <p className="text-xs text-label-secondary dark:text-label-secondary-dark">
-                  {type?.name ?? "Unbekannt"} · {STATUS_LABELS[m.status]}
+                  {category?.name ?? "Ohne Kategorie"} · {type?.name ?? "Unbekannt"} · {STATUS_LABELS[m.status]}
                 </p>
               </div>
               <div className="shrink-0 text-right">
@@ -131,89 +90,17 @@ export function Vergleich() {
         )}
       </CardGroup>
 
-      <BottomSheet
-        open={showSheet}
-        title={editing ? "Maßnahme bearbeiten" : "Neue Maßnahme"}
-        onClose={() => setShowSheet(false)}
-      >
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <Field
-            label="Bezeichnung"
-            value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            placeholder="z. B. Badezimmer Fliesen"
-            required
-          />
-          <label className="block">
-            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-label-secondary dark:text-label-secondary-dark">
-              Art der Maßnahme
-            </span>
-            <select
-              value={form.typeId}
-              onChange={(e) => setForm((f) => ({ ...f, typeId: e.target.value }))}
-              className="w-full rounded-xl border border-separator bg-surface px-3.5 py-2.5 text-[15px] text-label outline-none focus:border-ios-blue dark:border-separator-dark dark:bg-surface-elevated-dark dark:text-label-dark"
-              required
-            >
-              {types.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            <Field
-              label="Sollkosten (€)"
-              type="number"
-              inputMode="decimal"
-              value={form.sollCost}
-              onChange={(e) => setForm((f) => ({ ...f, sollCost: e.target.value }))}
-              placeholder="0"
-              required
-            />
-            <Field
-              label="Istkosten (€)"
-              type="number"
-              inputMode="decimal"
-              value={form.istCost}
-              onChange={(e) => setForm((f) => ({ ...f, istCost: e.target.value }))}
-              placeholder="noch offen"
-            />
-          </div>
-          <label className="block">
-            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-label-secondary dark:text-label-secondary-dark">
-              Status
-            </span>
-            <select
-              value={form.status}
-              onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as MeasureStatus }))}
-              className="w-full rounded-xl border border-separator bg-surface px-3.5 py-2.5 text-[15px] text-label outline-none focus:border-ios-blue dark:border-separator-dark dark:bg-surface-elevated-dark dark:text-label-dark"
-            >
-              {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <Field
-            label="Notizen"
-            value={form.notes}
-            onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-            placeholder="Optional"
-          />
-          <Button type="submit" fullWidth>
-            {editing ? "Speichern" : "Hinzufügen"}
-          </Button>
-          {editing && (
-            <Button type="button" variant="destructive" fullWidth onClick={handleDelete}>
-              <span className="flex items-center justify-center gap-2">
-                <Trash2 size={16} /> Löschen
-              </span>
-            </Button>
-          )}
-        </form>
-      </BottomSheet>
+      {showSheet && (
+        <MeasureFormSheet
+          editing={editing}
+          categories={categories}
+          types={types}
+          onClose={() => setShowSheet(false)}
+          addMeasure={addMeasure}
+          updateMeasure={updateMeasure}
+          deleteMeasure={deleteMeasure}
+        />
+      )}
     </Screen>
   );
 }

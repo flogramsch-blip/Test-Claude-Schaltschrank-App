@@ -1,17 +1,27 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Plus } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useMeasures } from "../hooks/useMeasures";
+import { useCategories } from "../hooks/useCategories";
 import { useMeasureTypes } from "../hooks/useMeasureTypes";
 import { Screen } from "../components/ui/Screen";
 import { CardGroup, Card } from "../components/ui/Card";
+import { ListCell } from "../components/ui/ListCell";
 import { ProgressBar } from "../components/ui/ProgressBar";
+import { MeasureFormSheet } from "../components/measures/MeasureFormSheet";
 import { formatEuro, formatDate } from "../lib/format";
 import { STATUS_LABELS } from "../types";
 
 export function Home() {
+  const navigate = useNavigate();
   const { user } = useAuth();
-  const { measures } = useMeasures(user?.householdId ?? null);
-  const { types } = useMeasureTypes(user?.householdId ?? null);
+  const householdId = user?.householdId ?? null;
+  const { measures, addMeasure, updateMeasure, deleteMeasure } = useMeasures(householdId);
+  const { categories } = useCategories(householdId);
+  const { types } = useMeasureTypes(householdId);
+
+  const [showSheet, setShowSheet] = useState(false);
 
   const totals = useMemo(() => {
     const soll = measures.reduce((sum, m) => sum + m.sollCost, 0);
@@ -20,17 +30,17 @@ export function Home() {
     return { soll, ist, offen, diff: ist - soll };
   }, [measures]);
 
-  const byType = useMemo(() => {
-    return types.map((type) => {
-      const items = measures.filter((m) => m.typeId === type.id);
+  const byCategory = useMemo(() => {
+    return categories.map((category) => {
+      const items = measures.filter((m) => m.categoryId === category.id);
       return {
-        type,
+        category,
         soll: items.reduce((sum, m) => sum + m.sollCost, 0),
         ist: items.reduce((sum, m) => sum + (m.istCost ?? 0), 0),
         count: items.length,
       };
     });
-  }, [measures, types]);
+  }, [measures, categories]);
 
   const recent = useMemo(
     () => [...measures].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 5),
@@ -38,7 +48,19 @@ export function Home() {
   );
 
   return (
-    <Screen title="Übersicht" subtitle={`Hallo, ${user?.displayName ?? ""} 👋`}>
+    <Screen
+      title="Übersicht"
+      subtitle={`Hallo, ${user?.displayName ?? ""} 👋`}
+      trailing={
+        <button
+          onClick={() => setShowSheet(true)}
+          className="rounded-full bg-ios-blue p-2 text-white"
+          aria-label="Maßnahme hinzufügen"
+        >
+          <Plus size={20} />
+        </button>
+      }
+    >
       <Card className="mb-6 p-5">
         <p className="text-xs font-semibold uppercase tracking-wide text-label-secondary dark:text-label-secondary-dark">
           Gesamtkosten
@@ -61,27 +83,25 @@ export function Home() {
         </div>
       </Card>
 
-      <CardGroup title="Nach Art der Maßnahme">
-        {byType.map(({ type, soll, ist, count }) => (
-          <div key={type.id} className="px-4 py-3">
-            <div className="mb-1 flex items-center justify-between">
-              <span className="flex items-center gap-2 text-[15px] text-label dark:text-label-dark">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ background: type.color }} />
-                {type.name}
-                <span className="text-xs text-label-tertiary dark:text-label-tertiary-dark">
-                  ({count})
-                </span>
+      <CardGroup title="Kategorien">
+        {byCategory.map(({ category, soll, ist, count }) => (
+          <ListCell
+            key={category.id}
+            leading={<span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: category.color }} />}
+            label={
+              <span>
+                {category.name}{" "}
+                <span className="text-xs text-label-tertiary dark:text-label-tertiary-dark">({count})</span>
               </span>
-              <span className="text-[15px] font-medium text-label dark:text-label-dark">
-                {formatEuro(ist)} / {formatEuro(soll)}
-              </span>
-            </div>
-            <ProgressBar value={ist} max={soll} color={type.color} />
-          </div>
+            }
+            value={`${formatEuro(ist)} / ${formatEuro(soll)}`}
+            chevron
+            onClick={() => navigate(`/kategorie/${category.id}`)}
+          />
         ))}
-        {byType.length === 0 && (
+        {byCategory.length === 0 && (
           <p className="px-4 py-6 text-center text-sm text-label-secondary dark:text-label-secondary-dark">
-            Noch keine Maßnahmenarten angelegt.
+            Noch keine Kategorien angelegt.
           </p>
         )}
       </CardGroup>
@@ -106,6 +126,18 @@ export function Home() {
           </p>
         )}
       </CardGroup>
+
+      {showSheet && (
+        <MeasureFormSheet
+          editing={null}
+          categories={categories}
+          types={types}
+          onClose={() => setShowSheet(false)}
+          addMeasure={addMeasure}
+          updateMeasure={updateMeasure}
+          deleteMeasure={deleteMeasure}
+        />
+      )}
     </Screen>
   );
 }

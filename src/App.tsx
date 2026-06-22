@@ -7,6 +7,8 @@ import { Login } from "./pages/Login";
 import { HouseholdSetup } from "./pages/HouseholdSetup";
 import { Home } from "./pages/Home";
 import { Vergleich } from "./pages/Vergleich";
+import { Kategorie } from "./pages/Kategorie";
+import { Zeitplanung } from "./pages/Zeitplanung";
 import { Statistik } from "./pages/Statistik";
 import { Einstellungen } from "./pages/Einstellungen";
 
@@ -19,6 +21,8 @@ function AppShell() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/vergleich" element={<Vergleich />} />
+        <Route path="/kategorie/:categoryId" element={<Kategorie />} />
+        <Route path="/planung" element={<Zeitplanung />} />
         <Route path="/statistik" element={<Statistik />} />
         <Route path="/einstellungen" element={<Einstellungen />} />
         <Route path="*" element={<Navigate to="/" replace />} />

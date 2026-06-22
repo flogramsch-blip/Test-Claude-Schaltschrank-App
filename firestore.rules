@@ -32,6 +32,10 @@ service cloud.firestore {
         allow read, write: if isHouseholdMember(householdId);
       }
 
+      match /categories/{categoryId} {
+        allow read, write: if isHouseholdMember(householdId);
+      }
+
       match /measures/{measureId} {
         allow read, write: if isHouseholdMember(householdId);
       }

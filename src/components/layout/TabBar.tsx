@@ -1,10 +1,11 @@
 import { NavLink } from "react-router-dom";
-import { Home, ListChecks, PieChart, Settings } from "lucide-react";
+import { CalendarRange, Home, ListChecks, PieChart, Settings } from "lucide-react";
 import clsx from "clsx";
 
 const TABS = [
   { to: "/", label: "Übersicht", icon: Home },
   { to: "/vergleich", label: "Vergleich", icon: ListChecks },
+  { to: "/planung", label: "Planung", icon: CalendarRange },
   { to: "/statistik", label: "Statistik", icon: PieChart },
   { to: "/einstellungen", label: "Einstellungen", icon: Settings },
 ];

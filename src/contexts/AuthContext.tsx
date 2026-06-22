@@ -26,7 +26,7 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { auth, db } from "../lib/firebase";
-import { DEFAULT_MEASURE_TYPES, type AppUser } from "../types";
+import { DEFAULT_CATEGORIES, DEFAULT_MEASURE_TYPES, type AppUser } from "../types";
 
 function generateInviteCode() {
   return Math.random().toString(36).slice(2, 8).toUpperCase();
@@ -107,6 +107,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const batch = writeBatch(db);
     for (const type of DEFAULT_MEASURE_TYPES) {
       batch.set(doc(collection(db, "households", ref.id, "measureTypes")), type);
+    }
+    for (const category of DEFAULT_CATEGORIES) {
+      batch.set(doc(collection(db, "households", ref.id, "categories")), category);
     }
     batch.update(doc(db, "users", firebaseUser.uid), { householdId: ref.id });
     await batch.commit();
