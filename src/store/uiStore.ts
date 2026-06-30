@@ -24,6 +24,8 @@ interface UIStore {
   wireDrawing: WireDrawingState
   simulationRunning: boolean
   faultWireId: string | null
+  exercisesOpen: boolean
+  activeExerciseId: string | null
 
   setMode: (mode: EditorMode) => void
   selectComponent: (instanceId: string | null) => void
@@ -36,6 +38,8 @@ interface UIStore {
   setPendingWireColor: (color: WireColor) => void
   setSimulationRunning: (running: boolean) => void
   setFaultWire: (wireId: string | null) => void
+  toggleExercises: () => void
+  setActiveExercise: (id: string | null) => void
 }
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -57,6 +61,8 @@ export const useUIStore = create<UIStore>((set) => ({
   },
   simulationRunning: false,
   faultWireId: null,
+  exercisesOpen: false,
+  activeExerciseId: null,
 
   setMode: (mode) => set({ mode, selectedInstanceId: null, selectedWireId: null }),
   selectComponent: (instanceId) => set({ selectedInstanceId: instanceId, selectedWireId: null }),
@@ -93,4 +99,6 @@ export const useUIStore = create<UIStore>((set) => ({
 
   setSimulationRunning: (running) => set({ simulationRunning: running }),
   setFaultWire: (wireId) => set({ faultWireId: wireId }),
+  toggleExercises: () => set(s => ({ exercisesOpen: !s.exercisesOpen })),
+  setActiveExercise: (id) => set({ activeExerciseId: id }),
 }))

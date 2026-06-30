@@ -5,6 +5,7 @@ import type { Schaltschrank, Wire, DINRail } from '@/types/schaltschrank'
 import { createDefaultSchaltschrank } from '@/data/defaultSchaltschrank'
 import { COMPONENT_MAP } from '@/data/componentDefinitions'
 import { checkTECollision } from '@/utils/validation'
+import type { Preset } from '@/data/presets'
 
 interface HistoryEntry {
   schaltschrank: Schaltschrank
@@ -29,6 +30,8 @@ interface SchaltschrankStore {
   updateWire: (wireId: string, updates: Partial<Wire>) => void
 
   updateProjectName: (name: string) => void
+
+  insertPreset: (preset: Preset) => void
 
   undo: () => void
   redo: () => void
@@ -242,6 +245,67 @@ export const useSchaltschrankStore = create<SchaltschrankStore>((set, get) => ({
   updateProjectName: (name) => {
     set(produce((draft: SchaltschrankStore) => {
       draft.schaltschrank.name = name
+    }))
+  },
+
+  insertPreset: (preset) => {
+    set(produce((draft: SchaltschrankStore) => {
+      draft.past = pushHistory(draft.past, draft.schaltschrank)
+      draft.future = []
+
+      // Sicherstellen, dass genug Hutschienen existieren
+      const maxRailIndex = Math.max(...preset.components.map(c => c.railIndex))
+      while (draft.schaltschrank.rails.length <= maxRailIndex) {
+        const last = draft.schaltschrank.rails.at(-1)
+        draft.schaltschrank.rails.push({
+          id: uuidv4(),
+          label: `Hutschiene ${draft.schaltschrank.rails.length + 1}`,
+          lengthTE: 36,
+          yPosition: last ? last.yPosition + 170 : 60,
+          placedComponents: [],
+        })
+      }
+
+      // Bauteile einfügen, key → instanceId merken
+      const keyToInstance = new Map<string, string>()
+      for (const pc of preset.components) {
+        const def = COMPONENT_MAP.get(pc.definitionId)
+        if (!def) continue
+        const rail = draft.schaltschrank.rails[pc.railIndex]
+        const instanceId = uuidv4()
+        keyToInstance.set(pc.key, instanceId)
+        rail.placedComponents.push({
+          instanceId,
+          definitionId: pc.definitionId,
+          railId: rail.id,
+          tePosition: pc.tePosition,
+          settings: {
+            nominalCurrent: pc.settings?.nominalCurrent ?? def.electricalModel.nominalCurrentDefault,
+            label: pc.label,
+            tripCurve: pc.settings?.tripCurve,
+            residualCurrent: pc.settings?.residualCurrent,
+          },
+        })
+      }
+
+      // Leitungen einfügen
+      for (const pw of preset.wires) {
+        const fromId = keyToInstance.get(pw.from[0])
+        const toId = keyToInstance.get(pw.to[0])
+        if (!fromId || !toId) continue
+        draft.schaltschrank.wires.push({
+          id: uuidv4(),
+          fromInstanceId: fromId,
+          fromConnectionId: pw.from[1],
+          toInstanceId: toId,
+          toConnectionId: pw.to[1],
+          color: pw.color,
+          crossSection: 1.5,
+          waypoints: [],
+        })
+      }
+
+      draft.schaltschrank.modifiedAt = new Date().toISOString()
     }))
   },
 

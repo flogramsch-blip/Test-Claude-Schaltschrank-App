@@ -20,7 +20,7 @@ const MODES: Array<{ id: EditorMode; label: string; shortcut: string }> = [
 
 export default function TopBar({ simState, setSimState, trippedComponents, setTrippedComponents }: Props) {
   const { schaltschrank, undo, redo, past, future, exportJSON, importJSON, addRail, updateProjectName } = useSchaltschrankStore()
-  const { mode, setMode, zoom, setZoom } = useUIStore()
+  const { mode, setMode, zoom, setZoom, exercisesOpen, toggleExercises } = useUIStore()
   const fileRef = useRef<HTMLInputElement>(null)
 
   function handleExport() {
@@ -59,8 +59,25 @@ export default function TopBar({ simState, setSimState, trippedComponents, setTr
         value={schaltschrank.name}
         onChange={e => updateProjectName(e.target.value)}
         className="bg-transparent text-slate-200 font-semibold text-sm outline-none border-b border-transparent focus:border-slate-600 min-w-0"
-        style={{ width: 160 }}
+        style={{ width: 140 }}
       />
+
+      <div className="w-px h-5 bg-slate-700" />
+
+      {/* Exercises */}
+      <button
+        onClick={toggleExercises}
+        className="flex items-center gap-1 px-2.5 py-1 text-xs rounded font-medium transition-colors"
+        style={{
+          background: exercisesOpen ? '#16a34a' : '#1e293b',
+          color: exercisesOpen ? '#dcfce7' : '#64748b',
+          border: '1px solid',
+          borderColor: exercisesOpen ? '#22c55e' : '#334155',
+        }}
+        title="Übungsaufgaben anzeigen"
+      >
+        📚 Übungen
+      </button>
 
       <div className="w-px h-5 bg-slate-700" />
 

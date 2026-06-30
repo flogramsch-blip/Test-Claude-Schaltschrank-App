@@ -4,6 +4,7 @@ import TopBar from '@/components/layout/TopBar'
 import ComponentPalette from '@/components/palette/ComponentPalette'
 import SchaltschrankCanvas from '@/components/canvas/SchaltschrankCanvas'
 import PropertiesPanel from '@/components/panels/PropertiesPanel'
+import ExercisePanel from '@/components/exercises/ExercisePanel'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 
 export default function App() {
@@ -22,7 +23,10 @@ export default function App() {
       />
       <div className="flex flex-1 overflow-hidden">
         <ComponentPalette />
-        <SchaltschrankCanvas simState={simState} />
+        <div className="relative flex flex-1 overflow-hidden">
+          <SchaltschrankCanvas simState={simState} />
+          <ExercisePanel />
+        </div>
         <PropertiesPanel simState={simState} />
       </div>
     </div>
