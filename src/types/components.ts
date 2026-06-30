@@ -17,6 +17,8 @@ export type ComponentCategory =
   | 'terminal'
   | 'power'
   | 'fuse'
+  | 'command'
+  | 'accessory'
 
 export type TripCurve = 'B' | 'C' | 'D' | 'gG' | 'thermal-magnetic'
 
@@ -30,7 +32,26 @@ export interface ConnectionPoint {
 }
 
 export interface ElectricalModel {
-  type: 'breaker' | 'motor-protection' | 'rcd' | 'contactor' | 'terminal' | 'fuse' | 'transformer' | 'relay'
+  type:
+    | 'breaker'
+    | 'motor-protection'
+    | 'rcd'
+    | 'contactor'
+    | 'terminal'
+    | 'fuse'
+    | 'transformer'
+    | 'relay'
+    | 'switch-disconnector'
+    | 'spd'
+    | 'monitoring-relay'
+    | 'emergency-stop'
+    | 'button'
+    | 'selector'
+    | 'indicator'
+    | 'power-supply'
+    | 'ct'
+    | 'socket'
+    | 'fan'
   nominalCurrentDefault: number
   nominalCurrentOptions?: number[]
   breakingCapacity?: number  // kA

@@ -306,6 +306,382 @@ export const COMPONENT_DEFINITIONS: ComponentDefinition[] = [
     },
     description: 'Steuertransformator wandelt 230V/400V in Steuerspannung (typisch 24V AC/DC) um. Galvanische Trennung zwischen Haupt- und Steuerkreis. Leistung in VA angegeben.',
   },
+
+  // ─── FI/LS-Kombischalter (RCBO) ───────────────────────────────────────
+  {
+    id: 'rcbo-1p',
+    name: 'FI/LS-Kombischalter (RCBO) 1+N',
+    shortName: 'RCBO',
+    category: 'protection',
+    teWidth: 2,
+    color: '#c026d3',
+    connections: [
+      { id: '1', label: '1', type: 'input',  relativeX: 0.5, relativeY: 0, phase: 'L1' },
+      { id: 'N-in', label: 'N', type: 'neutral', relativeX: 1.5, relativeY: 0, phase: 'N' },
+      { id: '2', label: '2', type: 'output', relativeX: 0.5, relativeY: 1, phase: 'L1' },
+      { id: 'N-out', label: 'N', type: 'output', relativeX: 1.5, relativeY: 1, phase: 'N' },
+    ],
+    electricalModel: {
+      type: 'rcd',
+      nominalCurrentDefault: 16,
+      nominalCurrentOptions: [6, 10, 13, 16, 20, 25, 32, 40],
+      residualCurrentDefault: 30,
+      breakingCapacity: 6,
+      tripCurve: 'B',
+      internalResistance: 0.01,
+      poleCount: 2,
+    },
+    description: 'Der FI/LS-Kombischalter (RCBO) vereint Leitungsschutzschalter und Fehlerstromschutz in einem Gerät. Schützt einen Stromkreis gleichzeitig vor Überlast, Kurzschluss und Fehlerströmen – spart Platz gegenüber getrennten Geräten.',
+  },
+
+  // ─── Leistungsschalter (MCCB) ─────────────────────────────────────────
+  {
+    id: 'mccb-3p',
+    name: 'Leistungsschalter (MCCB) 3-polig',
+    shortName: 'MCCB',
+    category: 'protection',
+    teWidth: 6,
+    color: '#0891b2',
+    connections: [
+      { id: '1', label: '1', type: 'input',  relativeX: 1, relativeY: 0, phase: 'L1' },
+      { id: '3', label: '3', type: 'input',  relativeX: 3, relativeY: 0, phase: 'L2' },
+      { id: '5', label: '5', type: 'input',  relativeX: 5, relativeY: 0, phase: 'L3' },
+      { id: '2', label: '2', type: 'output', relativeX: 1, relativeY: 1, phase: 'L1' },
+      { id: '4', label: '4', type: 'output', relativeX: 3, relativeY: 1, phase: 'L2' },
+      { id: '6', label: '6', type: 'output', relativeX: 5, relativeY: 1, phase: 'L3' },
+    ],
+    electricalModel: {
+      type: 'breaker',
+      nominalCurrentDefault: 100,
+      nominalCurrentOptions: [40, 50, 63, 80, 100, 125, 160, 200, 250],
+      breakingCapacity: 36,
+      tripCurve: 'D',
+      internalResistance: 0.005,
+      poleCount: 3,
+    },
+    description: 'Der Leistungsschalter (MCCB, Moulded Case Circuit Breaker) schützt große Stromkreise und Hauptverteilungen. Höheres Schaltvermögen als LSS, oft mit einstellbarem Überlast- und Kurzschlussauslöser.',
+  },
+
+  // ─── Hauptschalter / Lasttrennschalter ────────────────────────────────
+  {
+    id: 'hauptschalter-3p',
+    name: 'Hauptschalter / Lasttrennschalter 3-polig',
+    shortName: 'Hauptsch.',
+    category: 'protection',
+    teWidth: 3,
+    color: '#dc2626',
+    connections: [
+      { id: '1', label: '1', type: 'input',  relativeX: 0.5, relativeY: 0, phase: 'L1' },
+      { id: '3', label: '3', type: 'input',  relativeX: 1.5, relativeY: 0, phase: 'L2' },
+      { id: '5', label: '5', type: 'input',  relativeX: 2.5, relativeY: 0, phase: 'L3' },
+      { id: '2', label: '2', type: 'output', relativeX: 0.5, relativeY: 1, phase: 'L1' },
+      { id: '4', label: '4', type: 'output', relativeX: 1.5, relativeY: 1, phase: 'L2' },
+      { id: '6', label: '6', type: 'output', relativeX: 2.5, relativeY: 1, phase: 'L3' },
+    ],
+    electricalModel: {
+      type: 'switch-disconnector',
+      nominalCurrentDefault: 63,
+      nominalCurrentOptions: [25, 40, 63, 80, 100, 125],
+      internalResistance: 0.003,
+      poleCount: 3,
+    },
+    description: 'Der Hauptschalter (Lasttrennschalter) trennt die gesamte Anlage allpolig vom Netz. Schaltet unter Last, bietet aber keinen Überlast- oder Kurzschlussschutz. Roter Griff auf gelbem Grund = Not-Aus-Hauptschalter (abschließbar).',
+  },
+
+  // ─── Überspannungsschutz (SPD) ────────────────────────────────────────
+  {
+    id: 'spd-t2',
+    name: 'Überspannungsschutz (SPD Typ 2)',
+    shortName: 'SPD',
+    category: 'protection',
+    teWidth: 4,
+    color: '#eab308',
+    connections: [
+      { id: 'L1', label: 'L1', type: 'input', relativeX: 0.5, relativeY: 0, phase: 'L1' },
+      { id: 'L2', label: 'L2', type: 'input', relativeX: 1.5, relativeY: 0, phase: 'L2' },
+      { id: 'L3', label: 'L3', type: 'input', relativeX: 2.5, relativeY: 0, phase: 'L3' },
+      { id: 'N',  label: 'N',  type: 'neutral', relativeX: 3.5, relativeY: 0, phase: 'N' },
+      { id: 'PE', label: 'PE', type: 'pe', relativeX: 2, relativeY: 1, phase: 'PE' },
+    ],
+    electricalModel: {
+      type: 'spd',
+      nominalCurrentDefault: 20,
+      internalResistance: 1000,
+      poleCount: 4,
+    },
+    description: 'Der Überspannungsschutz (SPD, Surge Protective Device) leitet Überspannungen durch Blitz oder Schalthandlungen gegen PE ab. Typ 2 für Verteilungen. Defekte Module werden über ein Sichtfenster (rot) angezeigt und gesteckt getauscht.',
+  },
+
+  // ─── Zeitrelais ───────────────────────────────────────────────────────
+  {
+    id: 'zeitrelais',
+    name: 'Zeitrelais',
+    shortName: 'Zeit-R',
+    category: 'switching',
+    teWidth: 1,
+    color: '#f59e0b',
+    connections: [
+      { id: 'A1', label: 'A1', type: 'control-in',  relativeX: 0.5, relativeY: 0 },
+      { id: '15', label: '15', type: 'input',        relativeX: 0.5, relativeY: 0 },
+      { id: 'A2', label: 'A2', type: 'control-out', relativeX: 0.5, relativeY: 1 },
+      { id: '18', label: '18', type: 'output',       relativeX: 0.5, relativeY: 1 },
+    ],
+    electricalModel: {
+      type: 'relay',
+      nominalCurrentDefault: 6,
+      nominalCurrentOptions: [6, 8, 10],
+      internalResistance: 0.01,
+      poleCount: 1,
+    },
+    description: 'Zeitrelais schalten Kontakte zeitverzögert (ansprech- oder rückfallverzögert). Einsatz z.B. bei Stern-Dreieck-Anlauf oder Treppenhausbeleuchtung. Zeitbereich am Drehknopf einstellbar.',
+  },
+
+  // ─── Phasenwächter / Überwachungsrelais ───────────────────────────────
+  {
+    id: 'phasenwaechter',
+    name: 'Phasenwächter / Überwachungsrelais',
+    shortName: 'Phasen-W',
+    category: 'switching',
+    teWidth: 2,
+    color: '#14b8a6',
+    connections: [
+      { id: 'L1', label: 'L1', type: 'input',  relativeX: 0.5, relativeY: 0, phase: 'L1' },
+      { id: 'L2', label: 'L2', type: 'input',  relativeX: 1, relativeY: 0, phase: 'L2' },
+      { id: 'L3', label: 'L3', type: 'input',  relativeX: 1.5, relativeY: 0, phase: 'L3' },
+      { id: '15', label: '15', type: 'output', relativeX: 0.5, relativeY: 1 },
+      { id: '18', label: '18', type: 'output', relativeX: 1.5, relativeY: 1 },
+    ],
+    electricalModel: {
+      type: 'monitoring-relay',
+      nominalCurrentDefault: 5,
+      internalResistance: 0.01,
+      poleCount: 3,
+    },
+    description: 'Der Phasenwächter überwacht Drehfeld, Phasenausfall und Unter-/Überspannung. Bei Fehler schaltet das Ausgangsrelais ab und schützt z.B. Motoren vor Zweiphasenlauf.',
+  },
+
+  // ─── Koppelrelais ─────────────────────────────────────────────────────
+  {
+    id: 'koppelrelais',
+    name: 'Koppelrelais (Steckrelais)',
+    shortName: 'Koppel-R',
+    category: 'switching',
+    teWidth: 1,
+    color: '#fbbf24',
+    connections: [
+      { id: 'A1', label: 'A1', type: 'control-in',  relativeX: 0.5, relativeY: 0 },
+      { id: '11', label: '11', type: 'input',        relativeX: 0.5, relativeY: 0 },
+      { id: 'A2', label: 'A2', type: 'control-out', relativeX: 0.5, relativeY: 1 },
+      { id: '14', label: '14', type: 'output',       relativeX: 0.5, relativeY: 1 },
+    ],
+    electricalModel: {
+      type: 'relay',
+      nominalCurrentDefault: 6,
+      nominalCurrentOptions: [6, 8, 10],
+      internalResistance: 0.01,
+      poleCount: 1,
+    },
+    description: 'Koppelrelais trennen Steuer- und Lastkreis galvanisch und passen Spannungsebenen an (z.B. SPS-Ausgang 24V steuert 230V-Last). Steckbar auf Sockel, mit Status-LED.',
+  },
+
+  // ─── Not-Aus-Schalter ─────────────────────────────────────────────────
+  {
+    id: 'not-aus',
+    name: 'Not-Aus-Schalter',
+    shortName: 'NOT-AUS',
+    category: 'switching',
+    teWidth: 2,
+    color: '#dc2626',
+    connections: [
+      { id: '11', label: '11', type: 'input',  relativeX: 0.5, relativeY: 0 },
+      { id: '21', label: '21', type: 'input',  relativeX: 1.5, relativeY: 0 },
+      { id: '12', label: '12', type: 'output', relativeX: 0.5, relativeY: 1 },
+      { id: '22', label: '22', type: 'output', relativeX: 1.5, relativeY: 1 },
+    ],
+    electricalModel: {
+      type: 'emergency-stop',
+      nominalCurrentDefault: 6,
+      internalResistance: 0.005,
+      poleCount: 2,
+    },
+    description: 'Der Not-Aus-Schalter (Pilzdruck-Taster, rot/gelb) unterbricht im Gefahrfall zwangsöffnend den Steuerstromkreis (Öffnerkontakte 11-12, 21-22). Verrastet beim Drücken, muss entriegelt werden.',
+  },
+
+  // ─── Taster Schließer ─────────────────────────────────────────────────
+  {
+    id: 'taster-no',
+    name: 'Taster (Schließer)',
+    shortName: 'Taster NO',
+    category: 'command',
+    teWidth: 1,
+    color: '#22c55e',
+    connections: [
+      { id: '13', label: '13', type: 'input',  relativeX: 0.5, relativeY: 0 },
+      { id: '14', label: '14', type: 'output', relativeX: 0.5, relativeY: 1 },
+    ],
+    electricalModel: {
+      type: 'button',
+      nominalCurrentDefault: 6,
+      internalResistance: 0.005,
+      poleCount: 1,
+    },
+    description: 'Taster mit Schließerkontakt (NO, 13-14). Schließt den Kontakt nur solange gedrückt – typisch grüner EIN-Taster für Motorstart.',
+  },
+
+  // ─── Taster Öffner ────────────────────────────────────────────────────
+  {
+    id: 'taster-nc',
+    name: 'Taster (Öffner)',
+    shortName: 'Taster NC',
+    category: 'command',
+    teWidth: 1,
+    color: '#ef4444',
+    connections: [
+      { id: '11', label: '11', type: 'input',  relativeX: 0.5, relativeY: 0 },
+      { id: '12', label: '12', type: 'output', relativeX: 0.5, relativeY: 1 },
+    ],
+    electricalModel: {
+      type: 'button',
+      nominalCurrentDefault: 6,
+      internalResistance: 0.005,
+      poleCount: 1,
+    },
+    description: 'Taster mit Öffnerkontakt (NC, 11-12). Öffnet den Kontakt solange gedrückt – typisch roter AUS-Taster zum Motorstopp.',
+  },
+
+  // ─── Wahlschalter ─────────────────────────────────────────────────────
+  {
+    id: 'wahlschalter',
+    name: 'Wahlschalter (2-Stellung)',
+    shortName: 'Wahlsch.',
+    category: 'command',
+    teWidth: 1,
+    color: '#0ea5e9',
+    connections: [
+      { id: '13', label: '13', type: 'input',  relativeX: 0.5, relativeY: 0 },
+      { id: '14', label: '14', type: 'output', relativeX: 0.5, relativeY: 1 },
+    ],
+    electricalModel: {
+      type: 'selector',
+      nominalCurrentDefault: 6,
+      internalResistance: 0.005,
+      poleCount: 1,
+    },
+    description: 'Wahlschalter (Drehschalter) zur Auswahl von Betriebsarten, z.B. Hand-0-Automatik. Rastet in der gewählten Stellung ein.',
+  },
+
+  // ─── Meldeleuchte ─────────────────────────────────────────────────────
+  {
+    id: 'meldeleuchte',
+    name: 'Meldeleuchte',
+    shortName: 'Lampe',
+    category: 'command',
+    teWidth: 1,
+    color: '#22c55e',
+    connections: [
+      { id: 'X1', label: 'X1', type: 'input',  relativeX: 0.5, relativeY: 0 },
+      { id: 'X2', label: 'X2', type: 'output', relativeX: 0.5, relativeY: 1 },
+    ],
+    electricalModel: {
+      type: 'indicator',
+      nominalCurrentDefault: 1,
+      internalResistance: 500,
+      poleCount: 1,
+    },
+    description: 'Meldeleuchte (LED) zeigt Betriebszustände an: grün = Betrieb, rot = Störung, gelb = Warnung. Geringe Stromaufnahme.',
+  },
+
+  // ─── Schaltnetzteil 24V DC ────────────────────────────────────────────
+  {
+    id: 'netzteil-24v',
+    name: 'Schaltnetzteil 24V DC',
+    shortName: 'Netzteil',
+    category: 'power',
+    teWidth: 6,
+    color: '#16a34a',
+    connections: [
+      { id: 'L', label: 'L', type: 'input',   relativeX: 1, relativeY: 0, phase: 'L1' },
+      { id: 'N', label: 'N', type: 'neutral', relativeX: 2, relativeY: 0, phase: 'N' },
+      { id: 'PE', label: 'PE', type: 'pe',    relativeX: 3, relativeY: 0, phase: 'PE' },
+      { id: '+24V', label: '+', type: 'output', relativeX: 4.5, relativeY: 1 },
+      { id: '0V',  label: '−', type: 'output', relativeX: 5.5, relativeY: 1 },
+    ],
+    electricalModel: {
+      type: 'power-supply',
+      nominalCurrentDefault: 5,
+      nominalCurrentOptions: [2.5, 5, 10, 20, 40],
+      internalResistance: 0.1,
+      poleCount: 1,
+    },
+    description: 'Geregeltes Schaltnetzteil wandelt 230V AC in stabile 24V DC für Steuerungen (SPS, Sensoren, Relais). Strom in Ampere bei 24V angegeben.',
+  },
+
+  // ─── Stromwandler ─────────────────────────────────────────────────────
+  {
+    id: 'stromwandler',
+    name: 'Stromwandler',
+    shortName: 'Wandler',
+    category: 'accessory',
+    teWidth: 2,
+    color: '#8b5cf6',
+    connections: [
+      { id: 'P1', label: 'P1', type: 'input',  relativeX: 0.5, relativeY: 0 },
+      { id: 'P2', label: 'P2', type: 'output', relativeX: 1.5, relativeY: 1 },
+      { id: 'S1', label: 'S1', type: 'control-out', relativeX: 0.5, relativeY: 1 },
+      { id: 'S2', label: 'S2', type: 'control-out', relativeX: 1.5, relativeY: 0 },
+    ],
+    electricalModel: {
+      type: 'ct',
+      nominalCurrentDefault: 100,
+      nominalCurrentOptions: [50, 100, 150, 200, 400, 600],
+      internalResistance: 0.001,
+      poleCount: 1,
+    },
+    description: 'Der Stromwandler wandelt hohe Primärströme (z.B. 100A) in einen genormten Sekundärstrom (5A oder 1A) für Messgeräte herunter. Sekundärseite niemals offen betreiben!',
+  },
+
+  // ─── Schaltschranksteckdose ───────────────────────────────────────────
+  {
+    id: 'steckdose',
+    name: 'Schaltschrank-Steckdose',
+    shortName: 'Steckdose',
+    category: 'accessory',
+    teWidth: 3,
+    color: '#64748b',
+    connections: [
+      { id: 'L', label: 'L', type: 'input',   relativeX: 0.5, relativeY: 0, phase: 'L1' },
+      { id: 'N', label: 'N', type: 'neutral', relativeX: 1.5, relativeY: 0, phase: 'N' },
+      { id: 'PE', label: 'PE', type: 'pe',    relativeX: 2.5, relativeY: 0, phase: 'PE' },
+    ],
+    electricalModel: {
+      type: 'socket',
+      nominalCurrentDefault: 16,
+      internalResistance: 0.01,
+      poleCount: 1,
+    },
+    description: 'Servicesteckdose (Schuko) zur Hutschienenmontage – für Wartungsgeräte im Schaltschrank. Sollte separat über LSS abgesichert sein.',
+  },
+
+  // ─── Filterlüfter ─────────────────────────────────────────────────────
+  {
+    id: 'luefter',
+    name: 'Filterlüfter',
+    shortName: 'Lüfter',
+    category: 'accessory',
+    teWidth: 3,
+    color: '#06b6d4',
+    connections: [
+      { id: 'L', label: 'L', type: 'input',   relativeX: 1, relativeY: 0, phase: 'L1' },
+      { id: 'N', label: 'N', type: 'neutral', relativeX: 2, relativeY: 0, phase: 'N' },
+    ],
+    electricalModel: {
+      type: 'fan',
+      nominalCurrentDefault: 1,
+      internalResistance: 50,
+      poleCount: 1,
+    },
+    description: 'Filterlüfter führt Verlustwärme aus dem Schaltschrank ab. Oft über Thermostat geschaltet. Hält Geräte im zulässigen Temperaturbereich.',
+  },
 ]
 
 export const COMPONENT_MAP = new Map<string, ComponentDefinition>(
@@ -315,7 +691,9 @@ export const COMPONENT_MAP = new Map<string, ComponentDefinition>(
 export const CATEGORIES: Array<{ id: string; label: string; order: number }> = [
   { id: 'protection', label: 'Schutzorgane', order: 1 },
   { id: 'switching',  label: 'Schaltgeräte', order: 2 },
-  { id: 'terminal',   label: 'Klemmen',      order: 3 },
-  { id: 'fuse',       label: 'Sicherungen',  order: 4 },
-  { id: 'power',      label: 'Stromversorgung', order: 5 },
+  { id: 'command',    label: 'Befehls-/Meldegeräte', order: 3 },
+  { id: 'terminal',   label: 'Klemmen',      order: 4 },
+  { id: 'fuse',       label: 'Sicherungen',  order: 5 },
+  { id: 'power',      label: 'Stromversorgung', order: 6 },
+  { id: 'accessory',  label: 'Mess-/Zubehör', order: 7 },
 ]

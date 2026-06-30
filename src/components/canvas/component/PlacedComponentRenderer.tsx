@@ -10,6 +10,8 @@ import MotorschutzRenderer from './renderers/MotorschutzRenderer'
 import FIRenderer from './renderers/FIRenderer'
 import SchuetzRenderer from './renderers/SchuetzRenderer'
 import KlemmeRenderer from './renderers/KlemmeRenderer'
+import ButtonRenderer from './renderers/ButtonRenderer'
+import LampRenderer from './renderers/LampRenderer'
 import GenericRenderer from './renderers/GenericRenderer'
 
 interface Props {
@@ -57,6 +59,12 @@ export default function PlacedComponentRenderer({ placed, rail, simState }: Prop
         return <SchuetzRenderer def={def!} placed={placed} closed={simState?.closed} />
       case 'terminal':
         return <KlemmeRenderer def={def!} />
+      case 'button':
+      case 'selector':
+      case 'emergency-stop':
+        return <ButtonRenderer def={def!} placed={placed} />
+      case 'indicator':
+        return <LampRenderer def={def!} placed={placed} energized={simState?.energized} />
       default:
         return <GenericRenderer def={def!} placed={placed} />
     }
