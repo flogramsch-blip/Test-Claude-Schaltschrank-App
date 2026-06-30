@@ -1,8 +1,6 @@
 import { useRef } from 'react'
-import { DndContext, type DragEndEvent, useSensor, useSensors, PointerSensor } from '@dnd-kit/core'
 import { useSchaltschrankStore } from '@/store/schaltschrankStore'
 import { useUIStore } from '@/store/uiStore'
-import { COMPONENT_MAP } from '@/data/componentDefinitions'
 import { TE_WIDTH_PX, RAIL_X_OFFSET } from '@/utils/teGrid'
 import DINRailRow from './rail/DINRailRow'
 import WireRenderer from './wiring/WireRenderer'
@@ -16,41 +14,8 @@ interface Props {
 
 export default function SchaltschrankCanvas({ simState }: Props) {
   const svgRef = useRef<SVGSVGElement>(null)
-  const { schaltschrank, addComponent } = useSchaltschrankStore()
+  const { schaltschrank } = useSchaltschrankStore()
   const { zoom, panX, panY, setZoom, setPan, updateWireDrawingMouse, cancelWireDrawing, wireDrawing, mode, selectComponent, selectWire, faultWireId } = useUIStore()
-
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
-
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event
-    if (!over) return
-
-    const overId = String(over.id)
-    if (!overId.startsWith('rail-')) return
-
-    const railId = overId.replace('rail-', '')
-    const definitionId = active.data.current?.definitionId as string
-    if (!definitionId) return
-
-    const def = COMPONENT_MAP.get(definitionId)
-    if (!def) return
-
-    // Get drop position from the droppable rect
-    const rail = schaltschrank.rails.find(r => r.id === railId)
-    if (!rail) return
-
-    // Estimate TE position from the drag delta
-    const delta = event.delta
-    const initialX = (active.rect.current?.initial?.left ?? 0)
-    const svgRect = svgRef.current?.getBoundingClientRect()
-    if (!svgRect) return
-
-    const clientX = initialX + delta.x
-    const svgX = (clientX - svgRect.left - panX) / zoom
-    const tePosition = Math.max(0, Math.round((svgX - RAIL_X_OFFSET) / TE_WIDTH_PX))
-
-    addComponent(definitionId, railId, tePosition)
-  }
 
   function handleWheel(e: React.WheelEvent) {
     e.preventDefault()
@@ -97,7 +62,6 @@ export default function SchaltschrankCanvas({ simState }: Props) {
   }
 
   return (
-    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       <div
         className="relative flex-1 overflow-hidden"
         style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}
@@ -168,6 +132,5 @@ export default function SchaltschrankCanvas({ simState }: Props) {
           {'  '}Zoom: {Math.round(zoom * 100)}%
         </div>
       </div>
-    </DndContext>
   )
 }

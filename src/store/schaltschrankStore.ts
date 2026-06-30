@@ -43,8 +43,14 @@ interface SchaltschrankStore {
 
 const MAX_HISTORY = 50
 
+// Tiefe Kopie über JSON-Roundtrip. Funktioniert auch auf Immer-Draft-Proxies
+// (strukturiertes Klonen scheitert an Proxies). Schaltschrank ist reines JSON.
+function snapshot(value: Schaltschrank): Schaltschrank {
+  return JSON.parse(JSON.stringify(value)) as Schaltschrank
+}
+
 function pushHistory(past: HistoryEntry[], current: Schaltschrank): HistoryEntry[] {
-  const next = [...past, { schaltschrank: structuredClone(current) }]
+  const next = [...past, { schaltschrank: snapshot(current) }]
   if (next.length > MAX_HISTORY) next.shift()
   return next
 }
@@ -314,7 +320,7 @@ export const useSchaltschrankStore = create<SchaltschrankStore>((set, get) => ({
     if (past.length === 0) return
     const prev = past[past.length - 1]
     set(produce((draft: SchaltschrankStore) => {
-      draft.future = [{ schaltschrank: structuredClone(schaltschrank) }, ...draft.future]
+      draft.future = [{ schaltschrank: snapshot(schaltschrank) }, ...draft.future]
       draft.past = draft.past.slice(0, -1)
       draft.schaltschrank = prev.schaltschrank
     }))
@@ -325,7 +331,7 @@ export const useSchaltschrankStore = create<SchaltschrankStore>((set, get) => ({
     if (future.length === 0) return
     const next = future[0]
     set(produce((draft: SchaltschrankStore) => {
-      draft.past = [...draft.past, { schaltschrank: structuredClone(schaltschrank) }]
+      draft.past = [...draft.past, { schaltschrank: snapshot(schaltschrank) }]
       draft.future = draft.future.slice(1)
       draft.schaltschrank = next.schaltschrank
     }))
