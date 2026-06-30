@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
 export default defineConfig({
-  base: process.env.NODE_ENV === 'production' ? '/test-claude-schaltschrank-app/' : '/',
+  base: process.env.NODE_ENV === 'production' ? '/Test-Claude-Schaltschrank-App/' : '/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
