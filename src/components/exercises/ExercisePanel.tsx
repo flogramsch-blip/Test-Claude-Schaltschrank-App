@@ -1,13 +1,23 @@
 import { useState } from 'react'
 import { useUIStore } from '@/store/uiStore'
 import { useSchaltschrankStore } from '@/store/schaltschrankStore'
-import { EXERCISES, isExerciseDone } from '@/data/exercises'
+import { EXERCISES, isExerciseDone, evaluateAll } from '@/data/exercises'
 import { STERN_DREIECK_PRESET } from '@/data/presets'
 
 const DIFFICULTY_COLOR: Record<string, string> = {
   Einsteiger: '#22c55e',
   Leicht: '#eab308',
   Mittel: '#f97316',
+  Profi: '#ef4444',
+}
+
+const GRADE_COLOR: Record<number, string> = {
+  1: '#16a34a',
+  2: '#65a30d',
+  3: '#eab308',
+  4: '#f97316',
+  5: '#ef4444',
+  6: '#dc2626',
 }
 
 export default function ExercisePanel() {
@@ -25,6 +35,11 @@ export default function ExercisePanel() {
   const activeSteps = active ? active.check(schaltschrank) : []
   const activeDone = active ? isExerciseDone(activeSteps) : false
 
+  const evalResult = evaluateAll((id) => {
+    const ex = EXERCISES.find(e => e.id === id)
+    return ex ? ex.check(schaltschrank) : []
+  })
+
   return (
     <div
       className="absolute top-3 left-3 z-40 flex flex-col rounded-lg shadow-2xl"
@@ -39,9 +54,34 @@ export default function ExercisePanel() {
       <div className="overflow-y-auto p-3 flex flex-col gap-3">
         {!active ? (
           <>
+            {/* Auswertung */}
+            <div className="p-2.5 rounded" style={{ background: '#1e293b', border: '1px solid #334155' }}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-300">Auswertung</span>
+                <span
+                  className="text-xs font-bold px-2 py-0.5 rounded"
+                  style={{ background: GRADE_COLOR[evalResult.grade], color: '#fff' }}
+                  title="Note basierend auf erfüllten Teilschritten"
+                >
+                  Note {evalResult.grade} · {evalResult.gradeLabel}
+                </span>
+              </div>
+              {/* Fortschrittsbalken */}
+              <div className="h-2 rounded-full overflow-hidden" style={{ background: '#0f172a' }}>
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{ width: `${evalResult.percent}%`, background: GRADE_COLOR[evalResult.grade] }}
+                />
+              </div>
+              <div className="flex justify-between mt-1.5 text-xs text-slate-500">
+                <span>{evalResult.solved} / {evalResult.total} Übungen gelöst</span>
+                <span>{evalResult.percent}%</span>
+              </div>
+            </div>
+
             {/* Übungsliste */}
             <div className="text-xs text-slate-500">
-              5 Aufgaben zum Einstieg. Wähle eine Aufgabe – der Fortschritt wird automatisch geprüft.
+              {EXERCISES.length} Aufgaben. Wähle eine Aufgabe – der Fortschritt wird automatisch geprüft.
             </div>
             {EXERCISES.map(ex => {
               const steps = ex.check(schaltschrank)

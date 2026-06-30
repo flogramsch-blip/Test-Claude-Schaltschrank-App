@@ -10,7 +10,7 @@ export interface Exercise {
   id: string
   nr: number
   title: string
-  difficulty: 'Einsteiger' | 'Leicht' | 'Mittel'
+  difficulty: 'Einsteiger' | 'Leicht' | 'Mittel' | 'Profi'
   task: string
   hints: string[]
   check: (s: Schaltschrank) => ExerciseStep[]
@@ -162,8 +162,201 @@ export const EXERCISES: Exercise[] = [
       ]
     },
   },
+  {
+    id: 'ex6',
+    nr: 6,
+    title: 'Wendeschützschaltung',
+    difficulty: 'Mittel',
+    task: 'Eine Wendeschaltung dreht die Drehrichtung eines Motors um. Platziere einen Motorschutzschalter und zwei Schütze (K1 Rechtslauf, K2 Linkslauf) und verbinde beide Schütz-Eingänge mit den Motorschutz-Ausgängen (mindestens 4 Leitungen).',
+    hints: [
+      'Zwei Schütze platzieren – sie schalten später gegeneinander verriegelt.',
+      'Vom Motorschutz (T1/T2/T3) zu beiden Schützen verdrahten.',
+      'Tipp: Bei echter Wendeschaltung werden bei einem Schütz zwei Phasen getauscht.',
+    ],
+    check: (s) => {
+      const hasMSS = countByType(s, 'motor-protection') >= 1
+      const schuetze = countByType(s, 'contactor')
+      const wires = wiresBetween(
+        s,
+        c => compType(c) === 'motor-protection',
+        c => compType(c) === 'contactor',
+      )
+      return [
+        { label: 'Motorschutzschalter vorhanden', done: hasMSS },
+        { label: `Zwei Schütze platziert (${Math.min(schuetze, 2)}/2)`, done: schuetze >= 2 },
+        { label: `Leitungen MSS → Schütze (${Math.min(wires, 4)}/4)`, done: wires >= 4 },
+      ]
+    },
+  },
+  {
+    id: 'ex7',
+    nr: 7,
+    title: 'Selbsthaltung aufbauen',
+    difficulty: 'Mittel',
+    task: 'Baue einen Steuerstromkreis mit Selbsthaltung: EIN-Taster (Schließer), AUS-Taster (Öffner) und ein Schütz. Verbinde einen Taster mit der Schützspule (A1).',
+    hints: [
+      'EIN-Taster = Taster (Schließer), AUS-Taster = Taster (Öffner) aus „Befehls-/Meldegeräte".',
+      'Die Spule des Schützes sind die Klemmen A1/A2.',
+      'Im Verdrahten-Modus den Taster-Ausgang mit A1 des Schützes verbinden.',
+    ],
+    check: (s) => {
+      const hasNO = countByDefinition(s, 'taster-no') >= 1
+      const hasNC = countByDefinition(s, 'taster-nc') >= 1
+      const hasSchuetz = countByType(s, 'contactor') >= 1
+      const wiredToCoil = wiresBetween(
+        s,
+        c => compType(c) === 'button',
+        c => compType(c) === 'contactor',
+      ) >= 1
+      return [
+        { label: 'EIN-Taster (Schließer) platziert', done: hasNO },
+        { label: 'AUS-Taster (Öffner) platziert', done: hasNC },
+        { label: 'Schütz platziert', done: hasSchuetz },
+        { label: 'Taster mit Schütz verbunden', done: wiredToCoil },
+      ]
+    },
+  },
+  {
+    id: 'ex8',
+    nr: 8,
+    title: 'Not-Aus einbinden',
+    difficulty: 'Mittel',
+    task: 'Sicherheit zuerst: Platziere einen Not-Aus-Schalter und binde ihn in den Steuerkreis ein. Verbinde den Not-Aus mit einem Schütz, sodass im Notfall abgeschaltet wird.',
+    hints: [
+      'Der Not-Aus-Schalter liegt in „Schaltgeräte".',
+      'Not-Aus immer in Reihe in den Steuerkreis (Öffnerkontakt 11-12).',
+      'Verbinde einen Not-Aus-Kontakt mit der Schützspule oder dem Taster.',
+    ],
+    check: (s) => {
+      const hasNotAus = countByType(s, 'emergency-stop') >= 1
+      const hasSchuetz = countByType(s, 'contactor') >= 1
+      const wired = wiresBetween(
+        s,
+        c => compType(c) === 'emergency-stop',
+        c => compType(c) === 'contactor' || compType(c) === 'button',
+      ) >= 1
+      return [
+        { label: 'Not-Aus-Schalter platziert', done: hasNotAus },
+        { label: 'Schütz vorhanden', done: hasSchuetz },
+        { label: 'Not-Aus in Steuerkreis verdrahtet', done: wired },
+      ]
+    },
+  },
+  {
+    id: 'ex9',
+    nr: 9,
+    title: 'Beleuchtung mit Zeitrelais',
+    difficulty: 'Leicht',
+    task: 'Treppenhaus-Prinzip: Platziere ein Zeitrelais, einen Taster und eine Meldeleuchte (als Lampe). Verbinde den Taster mit dem Zeitrelais, damit das Licht zeitverzögert ausgeht.',
+    hints: [
+      'Zeitrelais aus „Schaltgeräte", Taster und Meldeleuchte aus „Befehls-/Meldegeräte".',
+      'Taster-Ausgang mit dem Zeitrelais-Eingang verbinden.',
+      'Die Meldeleuchte stellt die Treppenhausbeleuchtung dar.',
+    ],
+    check: (s) => {
+      const hasTimer = countByDefinition(s, 'zeitrelais') >= 1
+      const hasButton = countByType(s, 'button') >= 1
+      const hasLamp = countByType(s, 'indicator') >= 1
+      const wired = wiresBetween(
+        s,
+        c => compType(c) === 'button',
+        c => c.definitionId === 'zeitrelais',
+      ) >= 1
+      return [
+        { label: 'Zeitrelais platziert', done: hasTimer },
+        { label: 'Taster platziert', done: hasButton },
+        { label: 'Meldeleuchte platziert', done: hasLamp },
+        { label: 'Taster mit Zeitrelais verbunden', done: wired },
+      ]
+    },
+  },
+  {
+    id: 'ex10',
+    nr: 10,
+    title: 'Abschlussprüfung: Kompletter Motorabgang',
+    difficulty: 'Profi',
+    task: 'Baue einen vollständigen, normgerechten Motorabgang auf: FI-Schutzschalter, Motorschutzschalter, Schütz, eine Meldeleuchte (Betrieb) und eine PE-Klemme. Verdrahte Motorschutz → Schütz (3 Leitungen).',
+    hints: [
+      'Diese Aufgabe kombiniert alles aus den vorherigen Übungen.',
+      'Reihenfolge im Hauptstromkreis: FI → Motorschutz → Schütz → Motor.',
+      'Die Meldeleuchte zeigt den Betrieb an, die PE-Klemme den Schutzleiter.',
+    ],
+    check: (s) => {
+      const hasFI = countByType(s, 'rcd') >= 1
+      const hasMSS = countByType(s, 'motor-protection') >= 1
+      const hasSchuetz = countByType(s, 'contactor') >= 1
+      const hasLamp = countByType(s, 'indicator') >= 1
+      const hasPE = countByDefinition(s, 'pe-klemme') >= 1
+      const wires = wiresBetween(
+        s,
+        c => compType(c) === 'motor-protection',
+        c => compType(c) === 'contactor',
+      )
+      return [
+        { label: 'FI-Schutzschalter', done: hasFI },
+        { label: 'Motorschutzschalter', done: hasMSS },
+        { label: 'Schütz', done: hasSchuetz },
+        { label: 'Meldeleuchte', done: hasLamp },
+        { label: 'PE-Klemme', done: hasPE },
+        { label: `Leitungen MSS → Schütz (${Math.min(wires, 3)}/3)`, done: wires >= 3 },
+      ]
+    },
+  },
 ]
 
 export function isExerciseDone(steps: ExerciseStep[]): boolean {
   return steps.length > 0 && steps.every(st => st.done)
+}
+
+// ── Auswertung über alle Übungen ─────────────────────────────────────────
+export interface Evaluation {
+  solved: number
+  total: number
+  percent: number
+  stepsSolved: number
+  stepsTotal: number
+  grade: number       // deutsche Schulnote 1–6
+  gradeLabel: string
+}
+
+const GRADE_LABELS: Record<number, string> = {
+  1: 'Sehr gut',
+  2: 'Gut',
+  3: 'Befriedigend',
+  4: 'Ausreichend',
+  5: 'Mangelhaft',
+  6: 'Ungenügend',
+}
+
+function percentToGrade(p: number): number {
+  if (p >= 92) return 1
+  if (p >= 81) return 2
+  if (p >= 67) return 3
+  if (p >= 50) return 4
+  if (p >= 30) return 5
+  return 6
+}
+
+export function evaluateAll(check: (id: string) => ExerciseStep[]): Evaluation {
+  let solved = 0
+  let stepsSolved = 0
+  let stepsTotal = 0
+  for (const ex of EXERCISES) {
+    const steps = check(ex.id)
+    stepsTotal += steps.length
+    stepsSolved += steps.filter(st => st.done).length
+    if (isExerciseDone(steps)) solved++
+  }
+  // Note basiert auf erreichten Teilschritten (feinere Bewertung)
+  const percent = stepsTotal > 0 ? Math.round((stepsSolved / stepsTotal) * 100) : 0
+  const grade = percentToGrade(percent)
+  return {
+    solved,
+    total: EXERCISES.length,
+    percent,
+    stepsSolved,
+    stepsTotal,
+    grade,
+    gradeLabel: GRADE_LABELS[grade],
+  }
 }
