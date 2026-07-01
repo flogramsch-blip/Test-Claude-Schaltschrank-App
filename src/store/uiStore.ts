@@ -31,6 +31,8 @@ interface UIStore {
   hover: { instanceId: string | null; x: number; y: number }
   placementPreview: { railId: string; tePosition: number; teWidth: number; valid: boolean } | null
   lightCanvas: boolean
+  showCabinetWall: boolean
+  controlPanelOpen: boolean
   tutorialOpen: boolean
 
   setMode: (mode: EditorMode) => void
@@ -54,6 +56,8 @@ interface UIStore {
   clearHover: () => void
   setPlacementPreview: (p: { railId: string; tePosition: number; teWidth: number; valid: boolean } | null) => void
   toggleLightCanvas: () => void
+  toggleCabinetWall: () => void
+  toggleControlPanel: () => void
   openTutorial: () => void
   closeTutorial: () => void
 }
@@ -88,6 +92,8 @@ export const useUIStore = create<UIStore>((set) => ({
   hover: { instanceId: null, x: 0, y: 0 },
   placementPreview: null,
   lightCanvas: false,
+  showCabinetWall: true,
+  controlPanelOpen: false,
   tutorialOpen: !tutorialSeen(),
 
   setMode: (mode) => set({ mode, selectedInstanceId: null, selectedWireId: null }),
@@ -145,6 +151,8 @@ export const useUIStore = create<UIStore>((set) => ({
   clearHover: () => set(s => (s.hover.instanceId === null ? s : { hover: { instanceId: null, x: 0, y: 0 } })),
   setPlacementPreview: (p) => set({ placementPreview: p }),
   toggleLightCanvas: () => set(s => ({ lightCanvas: !s.lightCanvas })),
+  toggleCabinetWall: () => set(s => ({ showCabinetWall: !s.showCabinetWall })),
+  toggleControlPanel: () => set(s => ({ controlPanelOpen: !s.controlPanelOpen })),
   openTutorial: () => set({ tutorialOpen: true }),
   closeTutorial: () => {
     try { localStorage.setItem('tutorial-seen-v1', '1') } catch { /* ignore */ }

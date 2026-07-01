@@ -591,6 +591,47 @@ export const COMPONENT_DEFINITIONS: ComponentDefinition[] = [
     description: 'Meldeleuchte (LED) zeigt Betriebszustände an: grün = Betrieb, rot = Störung, gelb = Warnung. Geringe Stromaufnahme.',
   },
 
+  // ─── Meldeleuchten (Farbvarianten) ────────────────────────────────────
+  ...(['rot', 'gruen', 'gelb', 'blau', 'weiss'] as const).map(farbe => {
+    const meta = {
+      rot:   { name: 'rot',    color: '#ef4444', bed: 'Störung' },
+      gruen: { name: 'grün',   color: '#22c55e', bed: 'Betrieb' },
+      gelb:  { name: 'gelb',   color: '#eab308', bed: 'Warnung' },
+      blau:  { name: 'blau',   color: '#3b82f6', bed: 'Hinweis' },
+      weiss: { name: 'weiß',   color: '#e5e7eb', bed: 'Spannung vorhanden' },
+    }[farbe]
+    return {
+      id: `meldeleuchte-${farbe}`,
+      name: `Meldeleuchte ${meta.name}`,
+      shortName: `Lampe ${meta.name}`,
+      category: 'command' as const,
+      teWidth: 1,
+      color: meta.color,
+      connections: [
+        { id: 'X1', label: 'X1', type: 'input' as const,  relativeX: 0.5, relativeY: 0 },
+        { id: 'X2', label: 'X2', type: 'output' as const, relativeX: 0.5, relativeY: 1 },
+      ],
+      electricalModel: { type: 'indicator' as const, nominalCurrentDefault: 1, internalResistance: 500, poleCount: 1 },
+      description: `Meldeleuchte ${meta.name} (LED). Übliche Bedeutung: ${meta.bed}. Zeigt Betriebszustände auf der Schaltschranktür oder dem Bedienfeld an.`,
+    }
+  }),
+
+  // ─── Kabeldurchführung ────────────────────────────────────────────────
+  {
+    id: 'kabeldurchfuehrung',
+    name: 'Kabeldurchführung / Verschraubung',
+    shortName: 'Kabel raus',
+    category: 'accessory',
+    teWidth: 2,
+    color: '#334155',
+    connections: [
+      { id: 'in',  label: 'innen',  type: 'bidirectional', relativeX: 1, relativeY: 0 },
+      { id: 'out', label: 'extern', type: 'bidirectional', relativeX: 1, relativeY: 1 },
+    ],
+    electricalModel: { type: 'terminal', nominalCurrentDefault: 16, internalResistance: 0.001, poleCount: 1 },
+    description: 'Kabelverschraubung / Kabeldurchführung in der Gehäusewand. Leitungen werden hier aus dem Schaltschrank herausgeführt (z. B. zu Motoren, Sensoren, Feldgeräten). Die untere Klemme „extern" verlässt den Schrank.',
+  },
+
   // ─── Schaltnetzteil 24V DC ────────────────────────────────────────────
   {
     id: 'netzteil-24v',

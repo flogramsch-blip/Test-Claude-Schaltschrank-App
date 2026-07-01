@@ -1,12 +1,12 @@
 import { useRef } from 'react'
 import { useSchaltschrankStore } from '@/store/schaltschrankStore'
 import { useUIStore } from '@/store/uiStore'
-import { TE_WIDTH_PX, RAIL_X_OFFSET } from '@/utils/teGrid'
 import DINRailRow from './rail/DINRailRow'
 import WireRenderer from './wiring/WireRenderer'
 import WireInProgress from './wiring/WireInProgress'
 import WireColorPicker from './wiring/WireColorPicker'
 import PlacementShadow from './PlacementShadow'
+import CabinetWall from './CabinetWall'
 import { useControlState } from '@/simulation/useControlState'
 import type { SimulationState } from '@/types/simulation'
 
@@ -85,16 +85,8 @@ export default function SchaltschrankCanvas({ simState }: Props) {
         >
           {/* Cabinet background */}
           <g transform={`translate(${panX}, ${panY}) scale(${zoom})`}>
-            {/* Cabinet interior */}
-            <rect
-              x={0} y={0}
-              width={schaltschrank.rails.reduce((max, r) => Math.max(max, r.lengthTE * TE_WIDTH_PX + RAIL_X_OFFSET + 40), 800)}
-              height={schaltschrank.rails.reduce((max, r) => Math.max(max, r.yPosition + 170), 400)}
-              rx={4}
-              fill="#dde3e940"
-              stroke="#334155"
-              strokeWidth={1}
-            />
+            {/* Gehäusewand (Schaltschrank-Korpus) */}
+            <CabinetWall />
 
             {/* Wires (below components) */}
             <g>

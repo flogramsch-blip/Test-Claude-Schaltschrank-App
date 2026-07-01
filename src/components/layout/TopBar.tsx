@@ -23,7 +23,7 @@ const MODES: Array<{ id: EditorMode; label: string; shortcut: string }> = [
 
 export default function TopBar({ simState, setSimState, trippedComponents, setTrippedComponents }: Props) {
   const { schaltschrank, undo, redo, past, future, exportJSON, importJSON, addRail, updateProjectName, reset, compactRail } = useSchaltschrankStore()
-  const { mode, setMode, zoom, setZoom, setPan, exercisesOpen, toggleExercises, lightCanvas, toggleLightCanvas, openTutorial } = useUIStore()
+  const { mode, setMode, zoom, setZoom, setPan, exercisesOpen, toggleExercises, lightCanvas, toggleLightCanvas, openTutorial, showCabinetWall, toggleCabinetWall, toggleControlPanel } = useUIStore()
   const fileRef = useRef<HTMLInputElement>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [bomOpen, setBomOpen] = useState(false)
@@ -105,6 +105,15 @@ export default function TopBar({ simState, setSimState, trippedComponents, setTr
         title="Übungsaufgaben anzeigen"
       >
         📚 Übungen
+      </button>
+
+      <button
+        onClick={toggleControlPanel}
+        className="flex items-center gap-1 px-2.5 py-1 text-xs rounded font-medium transition-colors"
+        style={{ background: '#1e293b', color: '#64748b', border: '1px solid #334155' }}
+        title="Externe Steuereinheit / Bedienfeld"
+      >
+        🎛 Bedienfeld
       </button>
 
       <div className="w-px h-5 bg-slate-700" />
@@ -226,6 +235,7 @@ export default function TopBar({ simState, setSimState, trippedComponents, setTr
                   { label: '🖼 Als PNG exportieren', fn: () => exportPNG(schaltschrank) },
                   { label: '🖼 Als SVG exportieren', fn: () => exportSVG(schaltschrank) },
                   { label: lightCanvas ? '🌙 Dunkler Hintergrund' : '☀ Heller Hintergrund', fn: toggleLightCanvas },
+                  { label: showCabinetWall ? '⬜ Gehäusewand ausblenden' : '⬛ Gehäusewand einblenden', fn: toggleCabinetWall },
                   { label: '↔ Lücken schließen', fn: () => schaltschrank.rails.forEach(r => compactRail(r.id)) },
                   { label: '🎓 Tutorial anzeigen', fn: openTutorial },
                   { label: '⌨ Tastenkürzel & Hilfe', fn: () => setShortcutsOpen(true) },

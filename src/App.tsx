@@ -18,6 +18,7 @@ import HoverTooltip from '@/components/canvas/HoverTooltip'
 import StatusBar from '@/components/layout/StatusBar'
 import ValidationPanel from '@/components/panels/ValidationPanel'
 import TutorialOverlay from '@/components/onboarding/TutorialOverlay'
+import ControlPanelDialog from '@/components/simulation/ControlPanelDialog'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useSchaltschrankStore } from '@/store/schaltschrankStore'
 import { useUIStore } from '@/store/uiStore'
@@ -114,6 +115,9 @@ export default function App() {
         </div>
         <StatusBar />
       </div>
+
+      {/* Externe Steuereinheit / Bedienfeld */}
+      <ControlPanelDialog />
 
       {/* Tutorial / Onboarding */}
       <TutorialOverlay />

@@ -16,6 +16,7 @@ import ButtonRenderer from './renderers/ButtonRenderer'
 import LampRenderer from './renderers/LampRenderer'
 import ScrewFuseRenderer from './renderers/ScrewFuseRenderer'
 import NetworkRenderer from './renderers/NetworkRenderer'
+import CableGlandRenderer from './renderers/CableGlandRenderer'
 import GenericRenderer from './renderers/GenericRenderer'
 
 interface Props {
@@ -161,7 +162,9 @@ export default function PlacedComponentRenderer({ placed, rail, simState, contro
       case 'contactor':
         return <SchuetzRenderer def={def!} placed={placed} closed={controlOverride?.closed ?? simState?.closed} />
       case 'terminal':
-        return <KlemmeRenderer def={def!} placed={placed} />
+        return def!.id === 'kabeldurchfuehrung'
+          ? <CableGlandRenderer def={def!} />
+          : <KlemmeRenderer def={def!} placed={placed} />
       case 'button':
       case 'selector':
       case 'emergency-stop':
