@@ -19,38 +19,43 @@ export default function DINRailRow({ rail, simState }: Props) {
   const railW = rail.lengthTE * TE_WIDTH_PX
 
   return (
-    <g transform={`translate(0, ${rail.yPosition})`}>
-      {/* Drop zone indicator */}
-      {isOver && (
+    <g>
+      {/* Drop zone + Schiene: verschoben auf rail.yPosition */}
+      <g transform={`translate(0, ${rail.yPosition})`}>
+        {/* Drop zone indicator */}
+        {isOver && (
+          <rect
+            x={RAIL_X_OFFSET - 2}
+            y={-2}
+            width={railW + 4}
+            height={ROW_TOTAL_HEIGHT_PX + 4}
+            rx={4}
+            fill="#3b82f620"
+            stroke="#3b82f6"
+            strokeWidth={2}
+            strokeDasharray="6 3"
+          />
+        )}
+
+        {/* Drop target rect (SVG rect for @dnd-kit) */}
         <rect
-          x={RAIL_X_OFFSET - 2}
-          y={-2}
-          width={railW + 4}
-          height={ROW_TOTAL_HEIGHT_PX + 4}
-          rx={4}
-          fill="#3b82f620"
-          stroke="#3b82f6"
-          strokeWidth={2}
-          strokeDasharray="6 3"
+          ref={setNodeRef as unknown as React.Ref<SVGRectElement>}
+          x={RAIL_X_OFFSET}
+          y={0}
+          width={railW}
+          height={ROW_TOTAL_HEIGHT_PX}
+          fill="transparent"
         />
-      )}
 
-      {/* Drop target rect (SVG rect for @dnd-kit) */}
-      <rect
-        ref={setNodeRef as unknown as React.Ref<SVGRectElement>}
-        x={RAIL_X_OFFSET}
-        y={0}
-        width={railW}
-        height={ROW_TOTAL_HEIGHT_PX}
-        fill="transparent"
-      />
-
-      {/* Rail track */}
-      <g transform={`translate(0, ${RAIL_TOP_OFFSET_PX})`}>
-        <DINRailTrack lengthTE={rail.lengthTE} label={rail.label} />
+        {/* Rail track */}
+        <g transform={`translate(0, ${RAIL_TOP_OFFSET_PX})`}>
+          <DINRailTrack lengthTE={rail.lengthTE} label={rail.label} />
+        </g>
       </g>
 
-      {/* Placed components */}
+      {/* Bauteile + Klemmen liegen in absoluten Canvas-Koordinaten
+          (PlacedComponentRenderer / resolveConnectionPos rechnen rail.yPosition
+          selbst ein – daher NICHT in das verschobene <g> packen). */}
       {rail.placedComponents.map(placed => (
         <PlacedComponentRenderer
           key={placed.instanceId}
