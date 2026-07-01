@@ -19,6 +19,7 @@ export type ComponentCategory =
   | 'fuse'
   | 'command'
   | 'accessory'
+  | 'network'
 
 export type TripCurve = 'B' | 'C' | 'D' | 'gG' | 'thermal-magnetic'
 
@@ -52,6 +53,9 @@ export interface ElectricalModel {
     | 'ct'
     | 'socket'
     | 'fan'
+    | 'impulse-relay'
+    | 'safety-relay'
+    | 'network'
   nominalCurrentDefault: number
   nominalCurrentOptions?: number[]
   breakingCapacity?: number  // kA
@@ -59,6 +63,7 @@ export interface ElectricalModel {
   residualCurrentDefault?: number  // mA for RCDs
   internalResistance?: number  // Ω
   poleCount: number
+  timerModeDefault?: 'on-delay' | 'off-delay'
 }
 
 export interface ComponentDefinition {

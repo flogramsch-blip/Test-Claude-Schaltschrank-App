@@ -136,12 +136,12 @@ export default function PropertiesPanel({ simState }: Props) {
           )}
 
           {/* Zeitrelais */}
-          {def.id === 'zeitrelais' && (
+          {def.id.startsWith('zeitrelais') && (
             <>
               <label className="flex flex-col gap-1">
                 <span className="text-xs text-slate-400">Funktion</span>
                 <select
-                  value={placed.settings.timerMode ?? 'on-delay'}
+                  value={placed.settings.timerMode ?? def.electricalModel.timerModeDefault ?? 'on-delay'}
                   onChange={e => updateComponentSettings(placed.instanceId, { timerMode: e.target.value })}
                   className="bg-slate-800 text-slate-100 text-sm px-2 py-1.5 rounded border border-slate-700"
                 >

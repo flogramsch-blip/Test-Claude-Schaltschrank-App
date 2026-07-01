@@ -14,6 +14,8 @@ import SchuetzRenderer from './renderers/SchuetzRenderer'
 import KlemmeRenderer from './renderers/KlemmeRenderer'
 import ButtonRenderer from './renderers/ButtonRenderer'
 import LampRenderer from './renderers/LampRenderer'
+import ScrewFuseRenderer from './renderers/ScrewFuseRenderer'
+import NetworkRenderer from './renderers/NetworkRenderer'
 import GenericRenderer from './renderers/GenericRenderer'
 
 interface Props {
@@ -166,6 +168,13 @@ export default function PlacedComponentRenderer({ placed, rail, simState, contro
         return <ButtonRenderer def={def!} placed={placed} pressed={isPressed} />
       case 'indicator':
         return <LampRenderer def={def!} placed={placed} energized={controlOverride?.energized ?? simState?.energized} />
+      case 'network':
+        return <NetworkRenderer def={def!} />
+      case 'fuse':
+        // Schraubsicherungen (DIAZED/NEOZED) mit eigenem Renderer, NH bleibt generisch
+        return def!.id.startsWith('diazed') || def!.id.startsWith('neozed')
+          ? <ScrewFuseRenderer def={def!} placed={placed} tripped={tripped} />
+          : <GenericRenderer def={def!} placed={placed} />
       default:
         return <GenericRenderer def={def!} placed={placed} />
     }

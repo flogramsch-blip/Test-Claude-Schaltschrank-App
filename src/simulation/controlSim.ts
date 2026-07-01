@@ -8,7 +8,7 @@ export interface ControlState {
 }
 
 const SWITCH_TYPES = new Set(['button', 'selector', 'emergency-stop'])
-const COIL_TYPES = new Set(['contactor', 'relay', 'monitoring-relay'])
+const COIL_TYPES = new Set(['contactor', 'relay', 'monitoring-relay', 'impulse-relay', 'safety-relay'])
 
 /**
  * Leitet ab, ob ein Schalter aktuell Strom durchlässt (leitet):

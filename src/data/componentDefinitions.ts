@@ -682,6 +682,200 @@ export const COMPONENT_DEFINITIONS: ComponentDefinition[] = [
     },
     description: 'Filterlüfter führt Verlustwärme aus dem Schaltschrank ab. Oft über Thermostat geschaltet. Hält Geräte im zulässigen Temperaturbereich.',
   },
+
+  // ─── Zeitrelais anzugverzögert ────────────────────────────────────────
+  {
+    id: 'zeitrelais-anzug',
+    name: 'Zeitrelais anzugverzögert',
+    shortName: 'Zeit-R ⟳',
+    category: 'switching',
+    teWidth: 1,
+    color: '#f59e0b',
+    connections: [
+      { id: 'A1', label: 'A1', type: 'control-in',  relativeX: 0.5, relativeY: 0 },
+      { id: '15', label: '15', type: 'input',        relativeX: 0.5, relativeY: 0 },
+      { id: 'A2', label: 'A2', type: 'control-out', relativeX: 0.5, relativeY: 1 },
+      { id: '18', label: '18', type: 'output',       relativeX: 0.5, relativeY: 1 },
+    ],
+    electricalModel: { type: 'relay', nominalCurrentDefault: 6, nominalCurrentOptions: [6, 8, 10], internalResistance: 0.01, poleCount: 1, timerModeDefault: 'on-delay' },
+    description: 'Anzugverzögertes Zeitrelais (Ansprechverzögerung): Nach Anlegen der Steuerspannung schaltet der Kontakt erst nach Ablauf der eingestellten Zeit. Einsatz z.B. bei Stern-Dreieck-Anlauf.',
+  },
+
+  // ─── Zeitrelais abfallverzögert ───────────────────────────────────────
+  {
+    id: 'zeitrelais-abfall',
+    name: 'Zeitrelais abfallverzögert',
+    shortName: 'Zeit-R ⟲',
+    category: 'switching',
+    teWidth: 1,
+    color: '#f59e0b',
+    connections: [
+      { id: 'A1', label: 'A1', type: 'control-in',  relativeX: 0.5, relativeY: 0 },
+      { id: '15', label: '15', type: 'input',        relativeX: 0.5, relativeY: 0 },
+      { id: 'A2', label: 'A2', type: 'control-out', relativeX: 0.5, relativeY: 1 },
+      { id: '18', label: '18', type: 'output',       relativeX: 0.5, relativeY: 1 },
+    ],
+    electricalModel: { type: 'relay', nominalCurrentDefault: 6, nominalCurrentOptions: [6, 8, 10], internalResistance: 0.01, poleCount: 1, timerModeDefault: 'off-delay' },
+    description: 'Abfallverzögertes Zeitrelais (Rückfallverzögerung): Der Kontakt bleibt nach Wegfall der Steuerspannung noch für die eingestellte Zeit geschlossen. Einsatz z.B. Nachlauf von Lüftern.',
+  },
+
+  // ─── Stromstoßschalter ────────────────────────────────────────────────
+  {
+    id: 'stromstossschalter',
+    name: 'Stromstoßschalter',
+    shortName: 'Stromstoß',
+    category: 'switching',
+    teWidth: 1,
+    color: '#8b5cf6',
+    connections: [
+      { id: 'A1', label: 'A1', type: 'control-in',  relativeX: 0.5, relativeY: 0 },
+      { id: '1',  label: '1',  type: 'input',        relativeX: 0.5, relativeY: 0 },
+      { id: 'A2', label: 'A2', type: 'control-out', relativeX: 0.5, relativeY: 1 },
+      { id: '2',  label: '2',  type: 'output',       relativeX: 0.5, relativeY: 1 },
+    ],
+    electricalModel: { type: 'impulse-relay', nominalCurrentDefault: 16, nominalCurrentOptions: [10, 16], internalResistance: 0.01, poleCount: 1 },
+    description: 'Der Stromstoßschalter (Eltako) wechselt seinen Schaltzustand bei jedem Steuerimpuls (Taster-Betätigung). Typisch für Beleuchtung, die von mehreren Tastern geschaltet wird.',
+  },
+
+  // ─── Schraubsicherung DIAZED 1-fach ───────────────────────────────────
+  {
+    id: 'diazed-1',
+    name: 'Schraubsicherung DIAZED 1-polig',
+    shortName: 'DIAZED 1',
+    category: 'fuse',
+    teWidth: 2,
+    color: '#dc2626',
+    connections: [
+      { id: 'in',  label: '1', type: 'input',  relativeX: 1, relativeY: 0 },
+      { id: 'out', label: '2', type: 'output', relativeX: 1, relativeY: 1 },
+    ],
+    electricalModel: { type: 'fuse', nominalCurrentDefault: 25, nominalCurrentOptions: [6, 10, 16, 20, 25, 35, 50, 63], breakingCapacity: 50, tripCurve: 'gG', internalResistance: 0.005, poleCount: 1 },
+    description: 'DIAZED-Schraubsicherung (D-System). Klassische Schmelzsicherung mit farbcodiertem Kennmelder je Nennstrom. Für einphasige Absicherung.',
+  },
+
+  // ─── Schraubsicherung DIAZED 3-fach ───────────────────────────────────
+  {
+    id: 'diazed-3',
+    name: 'Schraubsicherung DIAZED 3-polig',
+    shortName: 'DIAZED 3',
+    category: 'fuse',
+    teWidth: 6,
+    color: '#dc2626',
+    connections: [
+      { id: '1', label: '1', type: 'input',  relativeX: 1, relativeY: 0 },
+      { id: '3', label: '3', type: 'input',  relativeX: 3, relativeY: 0 },
+      { id: '5', label: '5', type: 'input',  relativeX: 5, relativeY: 0 },
+      { id: '2', label: '2', type: 'output', relativeX: 1, relativeY: 1 },
+      { id: '4', label: '4', type: 'output', relativeX: 3, relativeY: 1 },
+      { id: '6', label: '6', type: 'output', relativeX: 5, relativeY: 1 },
+    ],
+    electricalModel: { type: 'fuse', nominalCurrentDefault: 25, nominalCurrentOptions: [6, 10, 16, 20, 25, 35, 50, 63], breakingCapacity: 50, tripCurve: 'gG', internalResistance: 0.005, poleCount: 3 },
+    description: 'Dreipolige DIAZED-Schraubsicherung für Drehstromkreise. Jede Phase einzeln abgesichert.',
+  },
+
+  // ─── Schraubsicherung NEOZED 1-fach ───────────────────────────────────
+  {
+    id: 'neozed-1',
+    name: 'Schraubsicherung NEOZED 1-polig',
+    shortName: 'NEOZED 1',
+    category: 'fuse',
+    teWidth: 1,
+    color: '#b91c1c',
+    connections: [
+      { id: 'in',  label: '1', type: 'input',  relativeX: 0.5, relativeY: 0 },
+      { id: 'out', label: '2', type: 'output', relativeX: 0.5, relativeY: 1 },
+    ],
+    electricalModel: { type: 'fuse', nominalCurrentDefault: 25, nominalCurrentOptions: [6, 10, 16, 20, 25, 35, 50, 63], breakingCapacity: 50, tripCurve: 'gG', internalResistance: 0.005, poleCount: 1 },
+    description: 'NEOZED-Schraubsicherung (D0-System). Kompakter als DIAZED, gleiche Funktion. Farbcodierter Kennmelder.',
+  },
+
+  // ─── Schraubsicherung NEOZED 3-fach ───────────────────────────────────
+  {
+    id: 'neozed-3',
+    name: 'Schraubsicherung NEOZED 3-polig',
+    shortName: 'NEOZED 3',
+    category: 'fuse',
+    teWidth: 3,
+    color: '#b91c1c',
+    connections: [
+      { id: '1', label: '1', type: 'input',  relativeX: 0.5, relativeY: 0 },
+      { id: '3', label: '3', type: 'input',  relativeX: 1.5, relativeY: 0 },
+      { id: '5', label: '5', type: 'input',  relativeX: 2.5, relativeY: 0 },
+      { id: '2', label: '2', type: 'output', relativeX: 0.5, relativeY: 1 },
+      { id: '4', label: '4', type: 'output', relativeX: 1.5, relativeY: 1 },
+      { id: '6', label: '6', type: 'output', relativeX: 2.5, relativeY: 1 },
+    ],
+    electricalModel: { type: 'fuse', nominalCurrentDefault: 25, nominalCurrentOptions: [6, 10, 16, 20, 25, 35, 50, 63], breakingCapacity: 50, tripCurve: 'gG', internalResistance: 0.005, poleCount: 3 },
+    description: 'Dreipolige NEOZED-Schraubsicherung für Drehstromkreise. Platzsparend, 1 TE pro Phase.',
+  },
+
+  // ─── Schutzkontaktsteckdose (Schuko) ──────────────────────────────────
+  {
+    id: 'schuko',
+    name: 'Schutzkontaktsteckdose (Schuko)',
+    shortName: 'Schuko',
+    category: 'accessory',
+    teWidth: 3,
+    color: '#475569',
+    connections: [
+      { id: 'L',  label: 'L',  type: 'input',   relativeX: 0.5, relativeY: 0, phase: 'L1' },
+      { id: 'N',  label: 'N',  type: 'neutral', relativeX: 1.5, relativeY: 0, phase: 'N' },
+      { id: 'PE', label: 'PE', type: 'pe',      relativeX: 2.5, relativeY: 0, phase: 'PE' },
+    ],
+    electricalModel: { type: 'socket', nominalCurrentDefault: 16, internalResistance: 0.01, poleCount: 1 },
+    description: 'Schutzkontaktsteckdose (Schuko, Typ F) zur Hutschienenmontage. 230V/16A mit Schutzleiter. Für Wartungsgeräte im Schaltschrank – separat absichern.',
+  },
+
+  // ─── Not-Aus-Sicherheitsrelais 2-kanalig ──────────────────────────────
+  {
+    id: 'safety-relay-2ch',
+    name: 'Not-Aus-Sicherheitsrelais 2-kanalig',
+    shortName: 'Safety 2K',
+    category: 'protection',
+    teWidth: 4,
+    color: '#eab308',
+    connections: [
+      { id: 'A1',  label: 'A1',  type: 'control-in',  relativeX: 0.5, relativeY: 0 },
+      { id: 'S11', label: 'S11', type: 'input',        relativeX: 1.5, relativeY: 0 },
+      { id: 'S21', label: 'S21', type: 'input',        relativeX: 2.5, relativeY: 0 },
+      { id: 'S12', label: 'S12', type: 'input',        relativeX: 3.5, relativeY: 0 },
+      { id: 'A2',  label: 'A2',  type: 'control-out', relativeX: 0.5, relativeY: 1 },
+      { id: '13',  label: '13',  type: 'output',       relativeX: 1.5, relativeY: 1 },
+      { id: '14',  label: '14',  type: 'output',       relativeX: 2.5, relativeY: 1 },
+      { id: '23',  label: '23',  type: 'output',       relativeX: 3.5, relativeY: 1 },
+    ],
+    electricalModel: { type: 'safety-relay', nominalCurrentDefault: 6, internalResistance: 0.01, poleCount: 2 },
+    description: 'Zweikanaliges Not-Aus-Sicherheitsrelais (Sicherheitsschaltgerät). Überwacht zwei redundante Not-Aus-Kreise (S11/S12, S21) und gibt bei Betätigung die Freigabekontakte (13/14, 23/24) sicher frei. Erfüllt Performance Level nach EN ISO 13849.',
+  },
+
+  // ─── LAN-Switch (Hutschiene) ──────────────────────────────────────────
+  {
+    id: 'lan-switch-8',
+    name: 'Industrie-LAN-Switch 8-Port',
+    shortName: 'LAN-Switch',
+    category: 'network',
+    teWidth: 8,
+    color: '#0ea5e9',
+    connections: [
+      { id: '24V', label: '24V', type: 'input',   relativeX: 0.5, relativeY: 0 },
+      { id: '0V',  label: '0V',  type: 'neutral', relativeX: 1.5, relativeY: 0 },
+    ],
+    electricalModel: { type: 'network', nominalCurrentDefault: 1, internalResistance: 24, poleCount: 1 },
+    description: 'Managed Industrie-Ethernet-Switch mit 8 RJ45-Ports für die Hutschienenmontage. Versorgung über 24V DC. Vernetzt SPS, HMI und Feldgeräte.',
+  },
+
+  // ─── Patchfeld ────────────────────────────────────────────────────────
+  {
+    id: 'patchfeld',
+    name: 'Patchfeld 12-Port',
+    shortName: 'Patchfeld',
+    category: 'network',
+    teWidth: 12,
+    color: '#0284c7',
+    connections: [],
+    electricalModel: { type: 'network', nominalCurrentDefault: 0, internalResistance: 1e9, poleCount: 0 },
+    description: 'Patchfeld mit 12 RJ45-Buchsen (Keystone) zur strukturierten Verkabelung. Rangiert Feldleitungen auf Patchkabel. In 19"-Technik oder als Hutschienenvariante.',
+  },
 ]
 
 export const COMPONENT_MAP = new Map<string, ComponentDefinition>(
@@ -696,4 +890,5 @@ export const CATEGORIES: Array<{ id: string; label: string; order: number }> = [
   { id: 'fuse',       label: 'Sicherungen',  order: 5 },
   { id: 'power',      label: 'Stromversorgung', order: 6 },
   { id: 'accessory',  label: 'Mess-/Zubehör', order: 7 },
+  { id: 'network',    label: 'Netzwerk', order: 8 },
 ]

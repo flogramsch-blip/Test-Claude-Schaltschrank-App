@@ -4,7 +4,7 @@ import { useUIStore } from '@/store/uiStore'
 import { COMPONENT_MAP } from '@/data/componentDefinitions'
 import { computeControlState, type ControlState } from './controlSim'
 
-interface TimerState { inSince: number | null; out: boolean }
+interface TimerState { inSince: number | null; out: boolean; prevInput?: boolean; latched?: boolean }
 
 /**
  * Liefert den Steuerzustand inkl. Zeitrelais-Verzögerung. Läuft während der
@@ -43,31 +43,47 @@ export function useControlState(schaltschrank: Schaltschrank): ControlState | nu
 
   function resolveOutput(id: string, inputActive: boolean): boolean {
     const info = settingsById.get(id)
-    if (!info || info.definitionId !== 'zeitrelais') return inputActive
-    const mode = info.timerMode ?? 'on-delay'
-    const ms = (info.timerSeconds ?? 5) * 1000
-    const t = timers.current.get(id) ?? { inSince: null, out: false }
-    if (mode === 'on-delay') {
-      if (inputActive) {
-        if (t.inSince == null) t.inSince = now
-        t.out = now - t.inSince >= ms
-      } else {
-        t.inSince = null
-        t.out = false
-      }
-    } else {
-      // abfallverzögert
-      if (inputActive) {
-        t.inSince = now
-        t.out = true
-      } else {
-        t.out = t.inSince != null && now - t.inSince < ms
-      }
+    if (!info) return inputActive
+    const def = COMPONENT_MAP.get(info.definitionId)
+    if (!def) return inputActive
+
+    // Stromstoßschalter: Verriegelung, wechselt bei jeder steigenden Flanke
+    if (def.electricalModel.type === 'impulse-relay') {
+      const t = timers.current.get(id) ?? { inSince: null, out: false, prevInput: false, latched: false }
+      if (inputActive && !t.prevInput) t.latched = !t.latched
+      t.prevInput = inputActive
+      t.out = !!t.latched
+      timers.current.set(id, t)
+      return t.out
     }
-    timers.current.set(id, t)
-    return t.out
+
+    // Zeitrelais (anzug-/abfallverzögert)
+    if (def.id.startsWith('zeitrelais')) {
+      const mode = info.timerMode ?? def.electricalModel.timerModeDefault ?? 'on-delay'
+      const ms = (info.timerSeconds ?? 5) * 1000
+      const t = timers.current.get(id) ?? { inSince: null, out: false }
+      if (mode === 'on-delay') {
+        if (inputActive) {
+          if (t.inSince == null) t.inSince = now
+          t.out = now - t.inSince >= ms
+        } else {
+          t.inSince = null
+          t.out = false
+        }
+      } else {
+        if (inputActive) {
+          t.inSince = now
+          t.out = true
+        } else {
+          t.out = t.inSince != null && now - t.inSince < ms
+        }
+      }
+      timers.current.set(id, t)
+      return t.out
+    }
+
+    return inputActive
   }
 
-  void COMPONENT_MAP
   return computeControlState(schaltschrank, pressedButtons, resolveOutput)
 }
