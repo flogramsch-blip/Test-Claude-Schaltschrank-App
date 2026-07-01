@@ -23,7 +23,7 @@ const MODES: Array<{ id: EditorMode; label: string; shortcut: string }> = [
 
 export default function TopBar({ simState, setSimState, trippedComponents, setTrippedComponents }: Props) {
   const { schaltschrank, undo, redo, past, future, exportJSON, importJSON, addRail, updateProjectName, reset } = useSchaltschrankStore()
-  const { mode, setMode, zoom, setZoom, setPan, exercisesOpen, toggleExercises, lightCanvas, toggleLightCanvas } = useUIStore()
+  const { mode, setMode, zoom, setZoom, setPan, exercisesOpen, toggleExercises, lightCanvas, toggleLightCanvas, openTutorial } = useUIStore()
   const fileRef = useRef<HTMLInputElement>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [bomOpen, setBomOpen] = useState(false)
@@ -226,6 +226,7 @@ export default function TopBar({ simState, setSimState, trippedComponents, setTr
                   { label: '🖼 Als PNG exportieren', fn: () => exportPNG(schaltschrank) },
                   { label: '🖼 Als SVG exportieren', fn: () => exportSVG(schaltschrank) },
                   { label: lightCanvas ? '🌙 Dunkler Hintergrund' : '☀ Heller Hintergrund', fn: toggleLightCanvas },
+                  { label: '🎓 Tutorial anzeigen', fn: openTutorial },
                   { label: '⌨ Tastenkürzel & Hilfe', fn: () => setShortcutsOpen(true) },
                   { label: '🗑 Alles zurücksetzen', fn: () => { if (confirm('Gesamten Schaltschrank löschen?')) reset() } },
                 ].map(item => (

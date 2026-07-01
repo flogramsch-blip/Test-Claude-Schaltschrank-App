@@ -17,6 +17,7 @@ import ExercisePanel from '@/components/exercises/ExercisePanel'
 import HoverTooltip from '@/components/canvas/HoverTooltip'
 import StatusBar from '@/components/layout/StatusBar'
 import ValidationPanel from '@/components/panels/ValidationPanel'
+import TutorialOverlay from '@/components/onboarding/TutorialOverlay'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useSchaltschrankStore } from '@/store/schaltschrankStore'
 import { useUIStore } from '@/store/uiStore'
@@ -113,6 +114,9 @@ export default function App() {
         </div>
         <StatusBar />
       </div>
+
+      {/* Tutorial / Onboarding */}
+      <TutorialOverlay />
 
       {/* Hover-Tooltip mit Bauteil-Infos */}
       <HoverTooltip />

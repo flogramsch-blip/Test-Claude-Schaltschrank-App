@@ -29,6 +29,7 @@ interface UIStore {
   hover: { instanceId: string | null; x: number; y: number }
   placementPreview: { railId: string; tePosition: number; teWidth: number; valid: boolean } | null
   lightCanvas: boolean
+  tutorialOpen: boolean
 
   setMode: (mode: EditorMode) => void
   selectComponent: (instanceId: string | null) => void
@@ -47,6 +48,12 @@ interface UIStore {
   clearHover: () => void
   setPlacementPreview: (p: { railId: string; tePosition: number; teWidth: number; valid: boolean } | null) => void
   toggleLightCanvas: () => void
+  openTutorial: () => void
+  closeTutorial: () => void
+}
+
+function tutorialSeen(): boolean {
+  try { return localStorage.getItem('tutorial-seen-v1') === '1' } catch { return true }
 }
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -73,6 +80,7 @@ export const useUIStore = create<UIStore>((set) => ({
   hover: { instanceId: null, x: 0, y: 0 },
   placementPreview: null,
   lightCanvas: false,
+  tutorialOpen: !tutorialSeen(),
 
   setMode: (mode) => set({ mode, selectedInstanceId: null, selectedWireId: null }),
   selectComponent: (instanceId) => set({ selectedInstanceId: instanceId, selectedWireId: null }),
@@ -115,4 +123,9 @@ export const useUIStore = create<UIStore>((set) => ({
   clearHover: () => set(s => (s.hover.instanceId === null ? s : { hover: { instanceId: null, x: 0, y: 0 } })),
   setPlacementPreview: (p) => set({ placementPreview: p }),
   toggleLightCanvas: () => set(s => ({ lightCanvas: !s.lightCanvas })),
+  openTutorial: () => set({ tutorialOpen: true }),
+  closeTutorial: () => {
+    try { localStorage.setItem('tutorial-seen-v1', '1') } catch { /* ignore */ }
+    set({ tutorialOpen: false })
+  },
 }))

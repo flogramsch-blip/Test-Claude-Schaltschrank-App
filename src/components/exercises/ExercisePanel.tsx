@@ -3,6 +3,10 @@ import { useUIStore } from '@/store/uiStore'
 import { useSchaltschrankStore } from '@/store/schaltschrankStore'
 import { EXERCISES, isExerciseDone, evaluateAll } from '@/data/exercises'
 import { STERN_DREIECK_PRESET } from '@/data/presets'
+import { SOLUTIONS } from '@/data/solutions'
+import { printReport } from '@/utils/printReport'
+import { loadCustomExercises, saveCustomExercises, checkCustom, type CustomExercise } from '@/data/customExercises'
+import CustomExerciseDialog from './CustomExerciseDialog'
 
 const DIFFICULTY_COLOR: Record<string, string> = {
   Einsteiger: '#22c55e',
@@ -27,7 +31,40 @@ export default function ExercisePanel() {
   const setActiveExercise = useUIStore(s => s.setActiveExercise)
   const schaltschrank = useSchaltschrankStore(s => s.schaltschrank)
   const insertPreset = useSchaltschrankStore(s => s.insertPreset)
+  const reset = useSchaltschrankStore(s => s.reset)
   const [showHints, setShowHints] = useState(false)
+  const [studentName, setStudentName] = useState('')
+  const [customList, setCustomList] = useState<CustomExercise[]>(() => loadCustomExercises())
+  const [editorOpen, setEditorOpen] = useState(false)
+
+  function addCustom(ex: CustomExercise) {
+    const next = [...customList, ex]
+    setCustomList(next)
+    saveCustomExercises(next)
+  }
+  function deleteCustom(id: string) {
+    const next = customList.filter(e => e.id !== id)
+    setCustomList(next)
+    saveCustomExercises(next)
+  }
+
+  function showSolution(exerciseId: string) {
+    const sol = SOLUTIONS[exerciseId]
+    if (!sol) return
+    if (!confirm('Aktuellen Aufbau durch die Musterlösung ersetzen?')) return
+    reset()
+    insertPreset(sol)
+  }
+
+  function handlePrint() {
+    const results = EXERCISES.map(ex => {
+      const steps = ex.check(schaltschrank)
+      return { nr: ex.nr, title: ex.title, difficulty: ex.difficulty, done: isExerciseDone(steps), steps }
+    })
+    const now = new Date()
+    const dateStr = now.toLocaleDateString('de-DE') + ' ' + now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+    printReport(studentName, results, evalResult, dateStr)
+  }
 
   if (!exercisesOpen) return null
 
@@ -77,6 +114,23 @@ export default function ExercisePanel() {
                 <span>{evalResult.solved} / {evalResult.total} Übungen gelöst</span>
                 <span>{evalResult.percent}%</span>
               </div>
+              {/* Report drucken */}
+              <div className="flex gap-1.5 mt-2">
+                <input
+                  value={studentName}
+                  onChange={e => setStudentName(e.target.value)}
+                  placeholder="Name des Azubis"
+                  className="flex-1 min-w-0 bg-slate-800 text-slate-100 text-xs px-2 py-1 rounded border border-slate-700 outline-none focus:border-blue-500"
+                />
+                <button
+                  onClick={handlePrint}
+                  className="text-xs px-2.5 py-1 rounded font-semibold shrink-0"
+                  style={{ background: '#334155', color: '#e2e8f0' }}
+                  title="Auswertung als druckbaren Report (PDF) öffnen"
+                >
+                  🖨 Report
+                </button>
+              </div>
             </div>
 
             {/* Übungsliste */}
@@ -113,6 +167,43 @@ export default function ExercisePanel() {
               )
             })}
 
+            {/* Eigene Aufgaben */}
+            <div className="mt-1 pt-3 border-t border-slate-800">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Eigene Aufgaben</span>
+                <button onClick={() => setEditorOpen(true)} className="text-xs text-blue-400 hover:text-blue-300">＋ Neu</button>
+              </div>
+              {customList.length === 0 ? (
+                <div className="text-xs text-slate-600">Noch keine eigenen Aufgaben. Ausbilder können hier Aufgaben anlegen.</div>
+              ) : (
+                <div className="flex flex-col gap-1">
+                  {customList.map(ex => {
+                    const steps = checkCustom(ex, schaltschrank)
+                    const done = isExerciseDone(steps)
+                    return (
+                      <div key={ex.id} className="p-2 rounded flex items-start gap-2" style={{ background: '#1e293b', border: '1px solid #334155' }}>
+                        <span className="shrink-0 flex items-center justify-center rounded-full text-xs font-bold mt-0.5"
+                          style={{ width: 18, height: 18, background: done ? '#16a34a' : '#334155', color: done ? '#fff' : '#94a3b8' }}>
+                          {done ? '✓' : '•'}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-semibold text-slate-200">{ex.title}</div>
+                          <div className="flex flex-col gap-0.5 mt-1">
+                            {steps.map((st, i) => (
+                              <span key={i} className={`text-xs ${st.done ? 'text-green-400' : 'text-slate-500'}`}>
+                                {st.done ? '✓' : '○'} {st.label}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <button onClick={() => deleteCustom(ex.id)} className="text-slate-600 hover:text-red-400 text-xs shrink-0">🗑</button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
             {/* Preset-Einfügen */}
             <div className="mt-1 pt-3 border-t border-slate-800">
               <div className="text-xs text-slate-500 mb-2">Vorlage zum Ansehen / Lernen:</div>
@@ -127,6 +218,8 @@ export default function ExercisePanel() {
                 Fügt Motorschutz, 3 Schütze und Zeitrelais mit vorverdrahtetem Hauptstromkreis ein.
               </div>
             </div>
+
+            <CustomExerciseDialog open={editorOpen} onClose={() => setEditorOpen(false)} onSave={addCustom} />
           </>
         ) : (
           <>
@@ -185,6 +278,17 @@ export default function ExercisePanel() {
                 </ul>
               )}
             </div>
+
+            {/* Musterlösung */}
+            {SOLUTIONS[active.id] && (
+              <button
+                onClick={() => showSolution(active.id)}
+                className="w-full py-2 text-sm rounded font-semibold transition-colors"
+                style={{ background: '#334155', color: '#e2e8f0' }}
+              >
+                🔧 Musterlösung anzeigen
+              </button>
+            )}
 
             {/* Stern-Dreieck Hilfe bei Übung 4 */}
             {active.id === 'ex4' && (
