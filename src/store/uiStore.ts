@@ -26,6 +26,7 @@ interface UIStore {
   faultWireId: string | null
   exercisesOpen: boolean
   activeExerciseId: string | null
+  hover: { instanceId: string | null; x: number; y: number }
 
   setMode: (mode: EditorMode) => void
   selectComponent: (instanceId: string | null) => void
@@ -40,6 +41,8 @@ interface UIStore {
   setFaultWire: (wireId: string | null) => void
   toggleExercises: () => void
   setActiveExercise: (id: string | null) => void
+  setHover: (instanceId: string, x: number, y: number) => void
+  clearHover: () => void
 }
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -63,6 +66,7 @@ export const useUIStore = create<UIStore>((set) => ({
   faultWireId: null,
   exercisesOpen: false,
   activeExerciseId: null,
+  hover: { instanceId: null, x: 0, y: 0 },
 
   setMode: (mode) => set({ mode, selectedInstanceId: null, selectedWireId: null }),
   selectComponent: (instanceId) => set({ selectedInstanceId: instanceId, selectedWireId: null }),
@@ -101,4 +105,6 @@ export const useUIStore = create<UIStore>((set) => ({
   setFaultWire: (wireId) => set({ faultWireId: wireId }),
   toggleExercises: () => set(s => ({ exercisesOpen: !s.exercisesOpen })),
   setActiveExercise: (id) => set({ activeExerciseId: id }),
+  setHover: (instanceId, x, y) => set({ hover: { instanceId, x, y } }),
+  clearHover: () => set(s => (s.hover.instanceId === null ? s : { hover: { instanceId: null, x: 0, y: 0 } })),
 }))

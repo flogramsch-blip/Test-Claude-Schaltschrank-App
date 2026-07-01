@@ -1,7 +1,8 @@
+import { useRef, useState } from 'react'
 import type { PlacedComponent, DINRail } from '@/types/schaltschrank'
 import type { ComponentSimState } from '@/types/simulation'
 import { COMPONENT_MAP } from '@/data/componentDefinitions'
-import { TE_WIDTH_PX, RAIL_HEIGHT_PX, RAIL_TOP_OFFSET_PX, RAIL_X_OFFSET, resolveConnectionPos } from '@/utils/teGrid'
+import { TE_WIDTH_PX, RAIL_HEIGHT_PX, RAIL_TOP_OFFSET_PX, RAIL_X_OFFSET, ROW_TOTAL_HEIGHT_PX, resolveConnectionPos } from '@/utils/teGrid'
 import { useUIStore } from '@/store/uiStore'
 import { useSchaltschrankStore } from '@/store/schaltschrankStore'
 import ConnectionPointMarker from './ConnectionPointMarker'
@@ -24,17 +25,50 @@ export default function PlacedComponentRenderer({ placed, rail, simState }: Prop
   const mode = useUIStore(s => s.mode)
   const selectedId = useUIStore(s => s.selectedInstanceId)
   const selectComponent = useUIStore(s => s.selectComponent)
+  const setHover = useUIStore(s => s.setHover)
+  const clearHover = useUIStore(s => s.clearHover)
   const removeComponent = useSchaltschrankStore(s => s.removeComponent)
+  const moveComponent = useSchaltschrankStore(s => s.moveComponent)
+  const rails = useSchaltschrankStore(s => s.schaltschrank.rails)
+
+  // Drag-Zustand für Verschieben auf/zwischen Hutschienen
+  const dragRef = useRef<{ startX: number; startY: number; moved: boolean; pointerId: number } | null>(null)
+  const [preview, setPreview] = useState<{ railId: string; tePosition: number } | null>(null)
 
   const def = COMPONENT_MAP.get(placed.definitionId)
   if (!def) return null
 
-  const x = RAIL_X_OFFSET + placed.tePosition * TE_WIDTH_PX
-  const y = rail.yPosition + RAIL_TOP_OFFSET_PX
   const w = def.teWidth * TE_WIDTH_PX
-
   const isSelected = selectedId === placed.instanceId
   const tripped = simState?.tripped ?? false
+  const isDragging = preview !== null
+
+  // Effektive Position: während des Ziehens folgt das Bauteil dem Cursor (Vorschau)
+  const effRail = preview ? (rails.find(r => r.id === preview.railId) ?? rail) : rail
+  const effTe = preview ? preview.tePosition : placed.tePosition
+  const x = RAIL_X_OFFSET + effTe * TE_WIDTH_PX
+  const y = effRail.yPosition + RAIL_TOP_OFFSET_PX
+
+  // Client-Koordinaten → absolute Canvas-Koordinaten (über CTM der Elternebene = DINRailRow-g)
+  function clientToCanvas(el: SVGGraphicsElement, clientX: number, clientY: number) {
+    const parent = el.parentNode as SVGGraphicsElement | null
+    const svg = el.ownerSVGElement
+    const ctm = parent?.getScreenCTM?.()
+    if (!svg || !ctm) return null
+    const pt = svg.createSVGPoint()
+    pt.x = clientX
+    pt.y = clientY
+    return pt.matrixTransform(ctm.inverse())
+  }
+
+  function computeTarget(el: SVGGraphicsElement, clientX: number, clientY: number) {
+    const loc = clientToCanvas(el, clientX, clientY)
+    if (!loc) return null
+    const tePosition = Math.max(0, Math.round((loc.x - RAIL_X_OFFSET) / TE_WIDTH_PX))
+    const targetRail =
+      rails.find(r => loc.y >= r.yPosition && loc.y <= r.yPosition + ROW_TOTAL_HEIGHT_PX) ?? rail
+    return { railId: targetRail.id, tePosition }
+  }
 
   function handlePointerDown(e: React.PointerEvent) {
     if (mode === 'wire') return
@@ -43,8 +77,44 @@ export default function PlacedComponentRenderer({ placed, rail, simState }: Prop
       removeComponent(placed.instanceId)
       return
     }
+    // Nur linke Maustaste (button 0) startet Auswahl/Verschieben
+    if (e.button !== 0) return
     e.stopPropagation()
+    clearHover()
     selectComponent(placed.instanceId)
+    const el = e.currentTarget as unknown as SVGGraphicsElement
+    el.setPointerCapture?.(e.pointerId)
+    dragRef.current = { startX: e.clientX, startY: e.clientY, moved: false, pointerId: e.pointerId }
+  }
+
+  function handleComponentPointerMove(e: React.PointerEvent) {
+    const st = dragRef.current
+    if (!st) return
+    if (!st.moved && Math.hypot(e.clientX - st.startX, e.clientY - st.startY) < 4) return
+    st.moved = true
+    const target = computeTarget(e.currentTarget as unknown as SVGGraphicsElement, e.clientX, e.clientY)
+    if (target) setPreview(target)
+  }
+
+  function handleComponentPointerUp(e: React.PointerEvent) {
+    const st = dragRef.current
+    dragRef.current = null
+    const el = e.currentTarget as unknown as SVGGraphicsElement
+    try { el.releasePointerCapture?.(e.pointerId) } catch { /* ignore */ }
+    if (st?.moved) {
+      const target = computeTarget(el, e.clientX, e.clientY)
+      if (target) moveComponent(placed.instanceId, target.railId, target.tePosition)
+    }
+    setPreview(null)
+  }
+
+  function handleMouseEnter(e: React.MouseEvent) {
+    if (dragRef.current) return
+    setHover(placed.instanceId, e.clientX, e.clientY)
+  }
+  function handleMouseMoveHover(e: React.MouseEvent) {
+    if (dragRef.current) return
+    setHover(placed.instanceId, e.clientX, e.clientY)
   }
 
   function getComponentBody() {
@@ -75,8 +145,17 @@ export default function PlacedComponentRenderer({ placed, rail, simState }: Prop
   return (
     <g
       transform={`translate(${x}, ${y})`}
-      style={{ cursor: mode === 'delete' ? 'not-allowed' : mode === 'select' ? 'grab' : 'default' }}
+      style={{
+        cursor: mode === 'delete' ? 'not-allowed' : mode === 'select' ? (isDragging ? 'grabbing' : 'grab') : 'default',
+      }}
+      opacity={isDragging ? 0.75 : 1}
       onPointerDown={handlePointerDown}
+      onPointerMove={handleComponentPointerMove}
+      onPointerUp={handleComponentPointerUp}
+      onClick={e => e.stopPropagation()}
+      onMouseEnter={handleMouseEnter}
+      onMouseMove={handleMouseMoveHover}
+      onMouseLeave={clearHover}
     >
       {/* Selection highlight */}
       {isSelected && (
