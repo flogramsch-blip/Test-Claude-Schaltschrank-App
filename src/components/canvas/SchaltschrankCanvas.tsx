@@ -7,7 +7,7 @@ import WireRenderer from './wiring/WireRenderer'
 import WireInProgress from './wiring/WireInProgress'
 import WireColorPicker from './wiring/WireColorPicker'
 import PlacementShadow from './PlacementShadow'
-import { computeControlState } from '@/simulation/controlSim'
+import { useControlState } from '@/simulation/useControlState'
 import type { SimulationState } from '@/types/simulation'
 
 interface Props {
@@ -17,9 +17,9 @@ interface Props {
 export default function SchaltschrankCanvas({ simState }: Props) {
   const svgRef = useRef<SVGSVGElement>(null)
   const { schaltschrank } = useSchaltschrankStore()
-  const { zoom, panX, panY, setZoom, setPan, updateWireDrawingMouse, cancelWireDrawing, wireDrawing, mode, selectComponent, selectWire, faultWireId, lightCanvas, simulationRunning, pressedButtons } = useUIStore()
+  const { zoom, panX, panY, setZoom, setPan, updateWireDrawingMouse, cancelWireDrawing, wireDrawing, mode, selectComponent, selectWire, faultWireId, lightCanvas } = useUIStore()
 
-  const controlState = simulationRunning ? computeControlState(schaltschrank, pressedButtons) : null
+  const controlState = useControlState(schaltschrank)
 
   function handleWheel(e: React.WheelEvent) {
     e.preventDefault()

@@ -25,6 +25,7 @@ interface UIStore {
   simulationRunning: boolean
   faultWireId: string | null
   pressedButtons: Set<string>
+  manualTripped: Set<string>
   exercisesOpen: boolean
   activeExerciseId: string | null
   hover: { instanceId: string | null; x: number; y: number }
@@ -45,6 +46,8 @@ interface UIStore {
   setFaultWire: (wireId: string | null) => void
   toggleButton: (instanceId: string) => void
   resetButtons: () => void
+  toggleTrip: (instanceId: string) => void
+  resetTripped: () => void
   toggleExercises: () => void
   setActiveExercise: (id: string | null) => void
   setHover: (instanceId: string, x: number, y: number) => void
@@ -79,6 +82,7 @@ export const useUIStore = create<UIStore>((set) => ({
   simulationRunning: false,
   faultWireId: null,
   pressedButtons: new Set<string>(),
+  manualTripped: new Set<string>(),
   exercisesOpen: false,
   activeExerciseId: null,
   hover: { instanceId: null, x: 0, y: 0 },
@@ -128,6 +132,13 @@ export const useUIStore = create<UIStore>((set) => ({
     return { pressedButtons: next }
   }),
   resetButtons: () => set(s => (s.pressedButtons.size === 0 ? s : { pressedButtons: new Set<string>() })),
+  toggleTrip: (instanceId) => set(s => {
+    const next = new Set(s.manualTripped)
+    if (next.has(instanceId)) next.delete(instanceId)
+    else next.add(instanceId)
+    return { manualTripped: next }
+  }),
+  resetTripped: () => set(s => (s.manualTripped.size === 0 ? s : { manualTripped: new Set<string>() })),
   toggleExercises: () => set(s => ({ exercisesOpen: !s.exercisesOpen })),
   setActiveExercise: (id) => set({ activeExerciseId: id }),
   setHover: (instanceId, x, y) => set({ hover: { instanceId, x, y } }),

@@ -1,19 +1,32 @@
-import type { ComponentDefinition } from '@/types'
+import type { ComponentDefinition, PlacedComponent as PC } from '@/types'
 import { TE_WIDTH_PX, RAIL_HEIGHT_PX } from '@/utils/teGrid'
 
 interface Props {
   def: ComponentDefinition
+  placed?: PC
 }
 
-export default function KlemmeRenderer({ def }: Props) {
+// Farben je Spannungsebene (Klemmen-Markierung)
+const LEVEL_COLORS: Record<string, { body: string; inner: string }> = {
+  L:      { body: '#1f2937', inner: '#374151' },
+  N:      { body: '#1e3a8a', inner: '#1d4ed8' },
+  PE:     { body: '#14532d', inner: '#166534' },
+  '24VDC':{ body: '#7f1d1d', inner: '#dc2626' },
+  '0V':   { body: '#334155', inner: '#64748b' },
+  none:   { body: '#374151', inner: '#475569' },
+}
+
+export default function KlemmeRenderer({ def, placed }: Props) {
   const w = def.teWidth * TE_WIDTH_PX
   const h = RAIL_HEIGHT_PX
   const isPE = def.id === 'pe-klemme'
+  const level = isPE ? 'PE' : (placed?.settings.terminalLevel ?? 'none')
+  const c = LEVEL_COLORS[level] ?? LEVEL_COLORS.none
 
   return (
     <g>
-      <rect x={0} y={0} width={w} height={h} rx={1} fill={isPE ? '#14532d' : '#374151'} />
-      <rect x={2} y={2} width={w - 4} height={h - 4} rx={1} fill={isPE ? '#166534' : '#475569'} />
+      <rect x={0} y={0} width={w} height={h} rx={1} fill={c.body} />
+      <rect x={2} y={2} width={w - 4} height={h - 4} rx={1} fill={c.inner} />
 
       {/* Screw head (top) */}
       <circle cx={w / 2} cy={8} r={4} fill="#1f2937" stroke="#9ca3af" strokeWidth={1} />
@@ -35,6 +48,13 @@ export default function KlemmeRenderer({ def }: Props) {
           <line x1={0} y1={-4} x2={0} y2={4} stroke="#22c55e" strokeWidth={1} />
           <line x1={-4} y1={0} x2={4} y2={0} stroke="#22c55e" strokeWidth={1} />
         </g>
+      )}
+
+      {/* Ebenen-Kürzel bei markierten Klemmen */}
+      {!isPE && level !== 'none' && (
+        <text x={w / 2} y={h / 2 + 3} textAnchor="middle" fontSize={6} fill="#e2e8f0" fontFamily="monospace" fontWeight="bold">
+          {level === '24VDC' ? '24V' : level}
+        </text>
       )}
     </g>
   )

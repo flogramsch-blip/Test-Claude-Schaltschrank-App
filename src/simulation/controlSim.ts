@@ -35,7 +35,11 @@ function conducting(definitionId: string, pressed: boolean): boolean {
  * Schalter verbunden ist. Eine Meldeleuchte leuchtet, wenn sie mit einem
  * leitenden Schalter oder einer angezogenen Spule verbunden ist.
  */
-export function computeControlState(s: Schaltschrank, pressed: Set<string>): ControlState {
+export function computeControlState(
+  s: Schaltschrank,
+  pressed: Set<string>,
+  resolveOutput: (instanceId: string, inputActive: boolean) => boolean = (_id, a) => a
+): ControlState {
   const byId = new Map<string, { definitionId: string; type: string }>()
   for (const rail of s.rails) {
     for (const c of rail.placedComponents) {
@@ -65,7 +69,9 @@ export function computeControlState(s: Schaltschrank, pressed: Set<string>): Con
   for (const [id, c] of byId) {
     if (!COIL_TYPES.has(c.type)) continue
     const ns = neighbors.get(id)
-    if (ns && [...ns].some(isConductingSwitch)) {
+    const inputActive = !!ns && [...ns].some(isConductingSwitch)
+    // resolveOutput erlaubt Zeitverzögerung (Zeitrelais anzug-/abfallverzögert)
+    if (resolveOutput(id, inputActive)) {
       energizedCoils.add(id)
       if (c.type === 'contactor') closedContactors.add(id)
     }

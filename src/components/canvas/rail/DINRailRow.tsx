@@ -39,7 +39,8 @@ export default function DINRailRow({ rail, simState, controlState }: Props) {
           />
         )}
 
-        {/* Drop target rect (SVG rect for @dnd-kit) */}
+        {/* Drop target rect (SVG rect für @dnd-kit; misst nur die Geometrie –
+            pointer-events:none, damit darunterliegende Leitungen klickbar bleiben) */}
         <rect
           ref={setNodeRef as unknown as React.Ref<SVGRectElement>}
           x={RAIL_X_OFFSET}
@@ -47,6 +48,7 @@ export default function DINRailRow({ rail, simState, controlState }: Props) {
           width={railW}
           height={ROW_TOTAL_HEIGHT_PX}
           fill="transparent"
+          style={{ pointerEvents: 'none' }}
         />
 
         {/* Rail track */}

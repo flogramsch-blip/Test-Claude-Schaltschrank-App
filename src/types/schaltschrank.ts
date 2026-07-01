@@ -10,6 +10,15 @@ export interface PlacedComponent {
     label?: string
     residualCurrent?: number
     tripCurve?: string
+    // Netzteil / Spannungsquelle
+    voltage?: number
+    outputCurrent?: number
+    voltageType?: 'AC' | 'DC'
+    // Zeitrelais
+    timerMode?: 'on-delay' | 'off-delay'
+    timerSeconds?: number
+    // Reihenklemme: farbliche Zuordnung zur Spannungsebene
+    terminalLevel?: 'PE' | 'N' | 'L' | '24VDC' | '0V' | 'none'
   }
 }
 

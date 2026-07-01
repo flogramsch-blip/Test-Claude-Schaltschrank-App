@@ -98,6 +98,89 @@ export default function PropertiesPanel({ simState }: Props) {
             </label>
           )}
 
+          {/* Netzteil / Spannungsquelle */}
+          {(def.electricalModel.type === 'power-supply' || def.electricalModel.type === 'transformer') && (
+            <>
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-slate-400">Ausgangsspannung</span>
+                <select
+                  value={placed.settings.voltage ?? (def.electricalModel.type === 'power-supply' ? 24 : 24)}
+                  onChange={e => updateComponentSettings(placed.instanceId, { voltage: Number(e.target.value) })}
+                  className="bg-slate-800 text-slate-100 text-sm px-2 py-1.5 rounded border border-slate-700"
+                >
+                  {[5, 12, 24, 48, 110, 230, 400].map(v => <option key={v} value={v}>{v} V</option>)}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-slate-400">Spannungsart</span>
+                <select
+                  value={placed.settings.voltageType ?? 'DC'}
+                  onChange={e => updateComponentSettings(placed.instanceId, { voltageType: e.target.value })}
+                  className="bg-slate-800 text-slate-100 text-sm px-2 py-1.5 rounded border border-slate-700"
+                >
+                  <option value="DC">DC (Gleichspannung)</option>
+                  <option value="AC">AC (Wechselspannung)</option>
+                </select>
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-slate-400">Ausgangsstrom (max.)</span>
+                <select
+                  value={placed.settings.outputCurrent ?? placed.settings.nominalCurrent ?? def.electricalModel.nominalCurrentDefault}
+                  onChange={e => updateComponentSettings(placed.instanceId, { outputCurrent: Number(e.target.value) })}
+                  className="bg-slate-800 text-slate-100 text-sm px-2 py-1.5 rounded border border-slate-700"
+                >
+                  {[1, 2.5, 5, 10, 20, 40].map(a => <option key={a} value={a}>{a} A</option>)}
+                </select>
+              </label>
+            </>
+          )}
+
+          {/* Zeitrelais */}
+          {def.id === 'zeitrelais' && (
+            <>
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-slate-400">Funktion</span>
+                <select
+                  value={placed.settings.timerMode ?? 'on-delay'}
+                  onChange={e => updateComponentSettings(placed.instanceId, { timerMode: e.target.value })}
+                  className="bg-slate-800 text-slate-100 text-sm px-2 py-1.5 rounded border border-slate-700"
+                >
+                  <option value="on-delay">anzugverzögert (Ansprechverzögerung)</option>
+                  <option value="off-delay">abfallverzögert (Rückfallverzögerung)</option>
+                </select>
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-slate-400">Verzögerungszeit</span>
+                <select
+                  value={placed.settings.timerSeconds ?? 5}
+                  onChange={e => updateComponentSettings(placed.instanceId, { timerSeconds: Number(e.target.value) })}
+                  className="bg-slate-800 text-slate-100 text-sm px-2 py-1.5 rounded border border-slate-700"
+                >
+                  {[0.5, 1, 2, 3, 5, 10, 15, 30, 60].map(t => <option key={t} value={t}>{t} s</option>)}
+                </select>
+              </label>
+            </>
+          )}
+
+          {/* Reihenklemme: Spannungsebene */}
+          {def.electricalModel.type === 'terminal' && def.id !== 'pe-klemme' && (
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-slate-400">Spannungsebene (Farbmarkierung)</span>
+              <select
+                value={placed.settings.terminalLevel ?? 'none'}
+                onChange={e => updateComponentSettings(placed.instanceId, { terminalLevel: e.target.value })}
+                className="bg-slate-800 text-slate-100 text-sm px-2 py-1.5 rounded border border-slate-700"
+              >
+                <option value="none">grau (unbestimmt)</option>
+                <option value="L">L – Phase (grau/schwarz)</option>
+                <option value="N">N – Neutralleiter (blau)</option>
+                <option value="PE">PE – Schutzleiter (grün-gelb)</option>
+                <option value="24VDC">24V DC + (rot)</option>
+                <option value="0V">0V / GND (weiß/blau)</option>
+              </select>
+            </label>
+          )}
+
           {/* Simulation state */}
           {cs && (
             <div className="border border-slate-700 rounded p-2">

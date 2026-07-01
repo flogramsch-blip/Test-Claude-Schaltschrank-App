@@ -32,7 +32,9 @@ export default function PlacedComponentRenderer({ placed, rail, simState, contro
   const setPlacementPreview = useUIStore(s => s.setPlacementPreview)
   const simulationRunning = useUIStore(s => s.simulationRunning)
   const toggleButton = useUIStore(s => s.toggleButton)
+  const toggleTrip = useUIStore(s => s.toggleTrip)
   const isPressed = useUIStore(s => s.pressedButtons.has(placed.instanceId))
+  const isManualTripped = useUIStore(s => s.manualTripped.has(placed.instanceId))
   const removeComponent = useSchaltschrankStore(s => s.removeComponent)
   const moveComponent = useSchaltschrankStore(s => s.moveComponent)
   const rails = useSchaltschrankStore(s => s.schaltschrank.rails)
@@ -46,7 +48,8 @@ export default function PlacedComponentRenderer({ placed, rail, simState, contro
 
   const w = def.teWidth * TE_WIDTH_PX
   const isSelected = selectedId === placed.instanceId
-  const tripped = simState?.tripped ?? false
+  const tripped = (simState?.tripped ?? false) || isManualTripped
+  const isProtective = ['breaker', 'rcd', 'motor-protection', 'fuse', 'switch-disconnector'].includes(def.electricalModel.type)
 
   // Original-Position: das Bauteil bleibt beim Ziehen gedimmt an seiner Stelle,
   // das Schattenmodell (PlacementShadow) zeigt die Zielposition.
@@ -83,6 +86,12 @@ export default function PlacedComponentRenderer({ placed, rail, simState, contro
     if (simulationRunning && isSwitch) {
       e.stopPropagation()
       toggleButton(placed.instanceId)
+      return
+    }
+    // In der Simulation: Schutzorgane manuell auslösen/zurücksetzen
+    if (simulationRunning && isProtective) {
+      e.stopPropagation()
+      toggleTrip(placed.instanceId)
       return
     }
     if (mode === 'delete') {
@@ -150,7 +159,7 @@ export default function PlacedComponentRenderer({ placed, rail, simState, contro
       case 'contactor':
         return <SchuetzRenderer def={def!} placed={placed} closed={controlOverride?.closed ?? simState?.closed} />
       case 'terminal':
-        return <KlemmeRenderer def={def!} />
+        return <KlemmeRenderer def={def!} placed={placed} />
       case 'button':
       case 'selector':
       case 'emergency-stop':
