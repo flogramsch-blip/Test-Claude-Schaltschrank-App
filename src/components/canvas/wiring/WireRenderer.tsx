@@ -12,9 +12,17 @@ interface Props {
   index: number
   isSimRunning: boolean
   isFault?: boolean
+  current?: number
 }
 
-export default function WireRenderer({ wire, rails, index, isSimRunning, isFault }: Props) {
+function loadColor(ratio: number): string {
+  if (ratio < 0.5) return '#22c55e'   // grün: gering
+  if (ratio < 0.8) return '#eab308'   // gelb: mittel
+  if (ratio < 1.0) return '#f97316'   // orange: hoch
+  return '#ef4444'                    // rot: Überlast
+}
+
+export default function WireRenderer({ wire, rails, index, isSimRunning, isFault, current }: Props) {
   const selectedWireId = useUIStore(s => s.selectedWireId)
   const mode = useUIStore(s => s.mode)
   const selectWire = useUIStore(s => s.selectWire)
@@ -46,8 +54,15 @@ export default function WireRenderer({ wire, rails, index, isSimRunning, isFault
     ? buildWirePath(fromPos.x, fromPos.y, toPos.x, toPos.y, index % 4, fromRail.yPosition)
     : buildCrossRailPath(fromPos.x, fromPos.y, toPos.x, toPos.y, index % 6)
 
-  const color = WIRE_COLORS[wire.color] ?? '#94a3b8'
-  const strokeWidth = isSelected ? 3.5 : 2.5
+  const baseColor = WIRE_COLORS[wire.color] ?? '#94a3b8'
+
+  // Auslastungs-Einfärbung während der Simulation (grün→gelb→orange→rot)
+  const fromNominal = fromDef.electricalModel.nominalCurrentDefault
+  const nominal = fromPlaced.settings.nominalCurrent ?? fromNominal
+  const loadRatio = current && nominal ? current / nominal : 0
+  const showLoad = isSimRunning && !isFault && current != null && current > 0.01
+  const color = showLoad ? loadColor(loadRatio) : baseColor
+  const strokeWidth = isSelected ? 3.5 : showLoad ? 3 : 2.5
 
   function handleClick(e: React.MouseEvent) {
     e.stopPropagation()
@@ -77,8 +92,23 @@ export default function WireRenderer({ wire, rails, index, isSimRunning, isFault
         }}
       />
 
+      {/* Strom-Anzeige während der Simulation */}
+      {showLoad && (
+        <text
+          x={(fromPos.x + toPos.x) / 2}
+          y={(fromPos.y + toPos.y) / 2 - 4}
+          textAnchor="middle"
+          fontSize={7}
+          fill={color}
+          fontFamily="monospace"
+          fontWeight="bold"
+        >
+          {current!.toFixed(1)} A
+        </text>
+      )}
+
       {/* Wire label */}
-      {wire.label && (
+      {!showLoad && wire.label && (
         <text
           x={(fromPos.x + toPos.x) / 2}
           y={(fromPos.y + toPos.y) / 2 - 4}

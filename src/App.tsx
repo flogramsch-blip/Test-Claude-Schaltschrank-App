@@ -16,6 +16,7 @@ import PropertiesPanel from '@/components/panels/PropertiesPanel'
 import ExercisePanel from '@/components/exercises/ExercisePanel'
 import HoverTooltip from '@/components/canvas/HoverTooltip'
 import StatusBar from '@/components/layout/StatusBar'
+import ValidationPanel from '@/components/panels/ValidationPanel'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useSchaltschrankStore } from '@/store/schaltschrankStore'
 import { useUIStore } from '@/store/uiStore'
@@ -106,6 +107,7 @@ export default function App() {
           <div className="relative flex flex-1 overflow-hidden">
             <SchaltschrankCanvas simState={simState} />
             <ExercisePanel />
+            <ValidationPanel />
           </div>
           <PropertiesPanel simState={simState} />
         </div>

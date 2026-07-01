@@ -103,6 +103,7 @@ export default function SchaltschrankCanvas({ simState }: Props) {
                   index={i}
                   isSimRunning={simState?.running ?? false}
                   isFault={wire.id === faultWireId}
+                  current={simState?.branches?.get(wire.id)?.current}
                 />
               ))}
             </g>
