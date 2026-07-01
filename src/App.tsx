@@ -20,6 +20,7 @@ import { useSchaltschrankStore } from '@/store/schaltschrankStore'
 import { useUIStore } from '@/store/uiStore'
 import { COMPONENT_MAP } from '@/data/componentDefinitions'
 import { TE_WIDTH_PX } from '@/utils/teGrid'
+import { placementValidity } from '@/utils/validation'
 
 export default function App() {
   const [simState, setSimState] = useState<SimulationState | null>(null)
@@ -27,7 +28,9 @@ export default function App() {
   const [dragDefId, setDragDefId] = useState<string | null>(null)
 
   const addComponent = useSchaltschrankStore(s => s.addComponent)
+  const rails = useSchaltschrankStore(s => s.schaltschrank.rails)
   const zoom = useUIStore(s => s.zoom)
+  const setPlacementPreview = useUIStore(s => s.setPlacementPreview)
 
   useKeyboardShortcuts()
 
@@ -35,35 +38,61 @@ export default function App() {
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } })
   )
 
-  function handleDragStart(event: DragStartEvent) {
-    setDragDefId((event.active.data.current?.definitionId as string) ?? null)
-  }
-
-  function handleDragEnd(event: DragEndEvent) {
-    setDragDefId(null)
+  // Zielposition aus einem dnd-kit-Event bestimmen (Palette → Schiene)
+  function targetFromEvent(event: DragEndEvent): { railId: string; definitionId: string; tePosition: number } | null {
     const { active, over } = event
-    if (!over) return
-
+    if (!over) return null
     const overId = String(over.id)
-    if (!overId.startsWith('rail-')) return
-
-    const railId = overId.replace('rail-', '')
+    if (!overId.startsWith('rail-')) return null
     const definitionId = active.data.current?.definitionId as string
-    if (!definitionId) return
-
-    // Finale Cursor-Position = Start-Position + Drag-Delta
+    if (!definitionId) return null
+    const railId = overId.replace('rail-', '')
     const activator = event.activatorEvent as PointerEvent | undefined
     const pointerX = (activator?.clientX ?? over.rect.left) + event.delta.x
     const offsetX = pointerX - over.rect.left
     const tePosition = Math.max(0, Math.round(offsetX / (TE_WIDTH_PX * zoom)))
+    return { railId, definitionId, tePosition }
+  }
 
-    addComponent(definitionId, railId, tePosition)
+  function handleDragStart(event: DragStartEvent) {
+    setDragDefId((event.active.data.current?.definitionId as string) ?? null)
+  }
+
+  function handleDragMove(event: DragEndEvent) {
+    const t = targetFromEvent(event)
+    if (!t) { setPlacementPreview(null); return }
+    const def = COMPONENT_MAP.get(t.definitionId)
+    if (!def) { setPlacementPreview(null); return }
+    setPlacementPreview({
+      railId: t.railId,
+      tePosition: t.tePosition,
+      teWidth: def.teWidth,
+      valid: placementValidity(rails, t.railId, t.tePosition, def.teWidth),
+    })
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    setDragDefId(null)
+    setPlacementPreview(null)
+    const t = targetFromEvent(event)
+    if (t) addComponent(t.definitionId, t.railId, t.tePosition)
+  }
+
+  function handleDragCancel() {
+    setDragDefId(null)
+    setPlacementPreview(null)
   }
 
   const dragDef = dragDefId ? COMPONENT_MAP.get(dragDefId) : null
 
   return (
-    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragMove={handleDragMove}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
+    >
       <div className="flex flex-col" style={{ height: '100vh', overflow: 'hidden' }}>
         <TopBar
           simState={simState}

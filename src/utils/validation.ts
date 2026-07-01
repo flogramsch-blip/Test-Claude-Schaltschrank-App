@@ -1,5 +1,6 @@
 import type { ComponentDefinition } from '@/types/components'
 import type { DINRail, PlacedComponent } from '@/types/schaltschrank'
+import { COMPONENT_MAP } from '@/data/componentDefinitions'
 
 export interface ValidationResult {
   valid: boolean
@@ -51,4 +52,27 @@ export function checkTECollision(
     }
   }
   return null
+}
+
+/**
+ * Prüft, ob ein Bauteil (teWidth) an tePosition auf railId platziert/verschoben
+ * werden darf: passt auf die Schiene und keine Kollision. Für die visuelle
+ * Platzierungs-Vorschau (Schattenmodell) verwendet.
+ */
+export function placementValidity(
+  rails: DINRail[],
+  railId: string,
+  tePosition: number,
+  teWidth: number,
+  excludeInstanceId?: string
+): boolean {
+  const rail = rails.find(r => r.id === railId)
+  if (!rail) return false
+  if (tePosition < 0 || tePosition + teWidth > rail.lengthTE) return false
+  const existing = rail.placedComponents.map(c => ({
+    tePosition: c.tePosition,
+    teWidth: COMPONENT_MAP.get(c.definitionId)?.teWidth ?? 1,
+    instanceId: c.instanceId,
+  }))
+  return checkTECollision(tePosition, teWidth, existing, excludeInstanceId) === null
 }

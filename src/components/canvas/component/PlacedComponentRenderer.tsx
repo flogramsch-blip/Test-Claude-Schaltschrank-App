@@ -5,6 +5,7 @@ import { COMPONENT_MAP } from '@/data/componentDefinitions'
 import { TE_WIDTH_PX, RAIL_HEIGHT_PX, RAIL_TOP_OFFSET_PX, RAIL_X_OFFSET, ROW_TOTAL_HEIGHT_PX, resolveConnectionPos } from '@/utils/teGrid'
 import { useUIStore } from '@/store/uiStore'
 import { useSchaltschrankStore } from '@/store/schaltschrankStore'
+import { placementValidity } from '@/utils/validation'
 import ConnectionPointMarker from './ConnectionPointMarker'
 import LSSRenderer from './renderers/LSSRenderer'
 import MotorschutzRenderer from './renderers/MotorschutzRenderer'
@@ -27,13 +28,14 @@ export default function PlacedComponentRenderer({ placed, rail, simState }: Prop
   const selectComponent = useUIStore(s => s.selectComponent)
   const setHover = useUIStore(s => s.setHover)
   const clearHover = useUIStore(s => s.clearHover)
+  const setPlacementPreview = useUIStore(s => s.setPlacementPreview)
   const removeComponent = useSchaltschrankStore(s => s.removeComponent)
   const moveComponent = useSchaltschrankStore(s => s.moveComponent)
   const rails = useSchaltschrankStore(s => s.schaltschrank.rails)
 
   // Drag-Zustand für Verschieben auf/zwischen Hutschienen
   const dragRef = useRef<{ startX: number; startY: number; moved: boolean; pointerId: number } | null>(null)
-  const [preview, setPreview] = useState<{ railId: string; tePosition: number } | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
 
   const def = COMPONENT_MAP.get(placed.definitionId)
   if (!def) return null
@@ -41,13 +43,11 @@ export default function PlacedComponentRenderer({ placed, rail, simState }: Prop
   const w = def.teWidth * TE_WIDTH_PX
   const isSelected = selectedId === placed.instanceId
   const tripped = simState?.tripped ?? false
-  const isDragging = preview !== null
 
-  // Effektive Position: während des Ziehens folgt das Bauteil dem Cursor (Vorschau)
-  const effRail = preview ? (rails.find(r => r.id === preview.railId) ?? rail) : rail
-  const effTe = preview ? preview.tePosition : placed.tePosition
-  const x = RAIL_X_OFFSET + effTe * TE_WIDTH_PX
-  const y = effRail.yPosition + RAIL_TOP_OFFSET_PX
+  // Original-Position: das Bauteil bleibt beim Ziehen gedimmt an seiner Stelle,
+  // das Schattenmodell (PlacementShadow) zeigt die Zielposition.
+  const x = RAIL_X_OFFSET + placed.tePosition * TE_WIDTH_PX
+  const y = rail.yPosition + RAIL_TOP_OFFSET_PX
 
   // Client-Koordinaten → absolute Canvas-Koordinaten (über CTM der Elternebene = DINRailRow-g)
   function clientToCanvas(el: SVGGraphicsElement, clientX: number, clientY: number) {
@@ -67,7 +67,8 @@ export default function PlacedComponentRenderer({ placed, rail, simState }: Prop
     const tePosition = Math.max(0, Math.round((loc.x - RAIL_X_OFFSET) / TE_WIDTH_PX))
     const targetRail =
       rails.find(r => loc.y >= r.yPosition && loc.y <= r.yPosition + ROW_TOTAL_HEIGHT_PX) ?? rail
-    return { railId: targetRail.id, tePosition }
+    const valid = placementValidity(rails, targetRail.id, tePosition, def!.teWidth, placed.instanceId)
+    return { railId: targetRail.id, tePosition, valid }
   }
 
   function handlePointerDown(e: React.PointerEvent) {
@@ -91,9 +92,17 @@ export default function PlacedComponentRenderer({ placed, rail, simState }: Prop
     const st = dragRef.current
     if (!st) return
     if (!st.moved && Math.hypot(e.clientX - st.startX, e.clientY - st.startY) < 4) return
+    if (!st.moved) setIsDragging(true)
     st.moved = true
     const target = computeTarget(e.currentTarget as unknown as SVGGraphicsElement, e.clientX, e.clientY)
-    if (target) setPreview(target)
+    if (target) {
+      setPlacementPreview({
+        railId: target.railId,
+        tePosition: target.tePosition,
+        teWidth: def!.teWidth,
+        valid: target.valid,
+      })
+    }
   }
 
   function handleComponentPointerUp(e: React.PointerEvent) {
@@ -103,9 +112,10 @@ export default function PlacedComponentRenderer({ placed, rail, simState }: Prop
     try { el.releasePointerCapture?.(e.pointerId) } catch { /* ignore */ }
     if (st?.moved) {
       const target = computeTarget(el, e.clientX, e.clientY)
-      if (target) moveComponent(placed.instanceId, target.railId, target.tePosition)
+      if (target && target.valid) moveComponent(placed.instanceId, target.railId, target.tePosition)
     }
-    setPreview(null)
+    setPlacementPreview(null)
+    setIsDragging(false)
   }
 
   function handleMouseEnter(e: React.MouseEvent) {
@@ -148,7 +158,7 @@ export default function PlacedComponentRenderer({ placed, rail, simState }: Prop
       style={{
         cursor: mode === 'delete' ? 'not-allowed' : mode === 'select' ? (isDragging ? 'grabbing' : 'grab') : 'default',
       }}
-      opacity={isDragging ? 0.75 : 1}
+      opacity={isDragging ? 0.4 : 1}
       onPointerDown={handlePointerDown}
       onPointerMove={handleComponentPointerMove}
       onPointerUp={handleComponentPointerUp}

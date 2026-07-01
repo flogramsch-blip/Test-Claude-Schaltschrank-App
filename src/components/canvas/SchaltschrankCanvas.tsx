@@ -6,6 +6,7 @@ import DINRailRow from './rail/DINRailRow'
 import WireRenderer from './wiring/WireRenderer'
 import WireInProgress from './wiring/WireInProgress'
 import WireColorPicker from './wiring/WireColorPicker'
+import PlacementShadow from './PlacementShadow'
 import type { SimulationState } from '@/types/simulation'
 
 interface Props {
@@ -114,6 +115,9 @@ export default function SchaltschrankCanvas({ simState }: Props) {
                 simState={simState ?? undefined}
               />
             ))}
+
+            {/* Platzierungs-Schatten (Vorschau beim Ziehen) */}
+            <PlacementShadow />
 
             {/* Wire being drawn */}
             <WireInProgress />
