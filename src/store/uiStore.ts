@@ -28,6 +28,7 @@ interface UIStore {
   activeExerciseId: string | null
   hover: { instanceId: string | null; x: number; y: number }
   placementPreview: { railId: string; tePosition: number; teWidth: number; valid: boolean } | null
+  lightCanvas: boolean
 
   setMode: (mode: EditorMode) => void
   selectComponent: (instanceId: string | null) => void
@@ -45,6 +46,7 @@ interface UIStore {
   setHover: (instanceId: string, x: number, y: number) => void
   clearHover: () => void
   setPlacementPreview: (p: { railId: string; tePosition: number; teWidth: number; valid: boolean } | null) => void
+  toggleLightCanvas: () => void
 }
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -70,6 +72,7 @@ export const useUIStore = create<UIStore>((set) => ({
   activeExerciseId: null,
   hover: { instanceId: null, x: 0, y: 0 },
   placementPreview: null,
+  lightCanvas: false,
 
   setMode: (mode) => set({ mode, selectedInstanceId: null, selectedWireId: null }),
   selectComponent: (instanceId) => set({ selectedInstanceId: instanceId, selectedWireId: null }),
@@ -111,4 +114,5 @@ export const useUIStore = create<UIStore>((set) => ({
   setHover: (instanceId, x, y) => set({ hover: { instanceId, x, y } }),
   clearHover: () => set(s => (s.hover.instanceId === null ? s : { hover: { instanceId: null, x: 0, y: 0 } })),
   setPlacementPreview: (p) => set({ placementPreview: p }),
+  toggleLightCanvas: () => set(s => ({ lightCanvas: !s.lightCanvas })),
 }))

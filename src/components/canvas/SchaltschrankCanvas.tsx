@@ -16,7 +16,7 @@ interface Props {
 export default function SchaltschrankCanvas({ simState }: Props) {
   const svgRef = useRef<SVGSVGElement>(null)
   const { schaltschrank } = useSchaltschrankStore()
-  const { zoom, panX, panY, setZoom, setPan, updateWireDrawingMouse, cancelWireDrawing, wireDrawing, mode, selectComponent, selectWire, faultWireId } = useUIStore()
+  const { zoom, panX, panY, setZoom, setPan, updateWireDrawingMouse, cancelWireDrawing, wireDrawing, mode, selectComponent, selectWire, faultWireId, lightCanvas } = useUIStore()
 
   function handleWheel(e: React.WheelEvent) {
     e.preventDefault()
@@ -65,7 +65,7 @@ export default function SchaltschrankCanvas({ simState }: Props) {
   return (
       <div
         className="relative flex-1 overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}
+        style={{ background: lightCanvas ? '#e2e8f0' : 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}
         onContextMenu={e => e.preventDefault()}
       >
         <svg

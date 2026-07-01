@@ -15,6 +15,7 @@ import SchaltschrankCanvas from '@/components/canvas/SchaltschrankCanvas'
 import PropertiesPanel from '@/components/panels/PropertiesPanel'
 import ExercisePanel from '@/components/exercises/ExercisePanel'
 import HoverTooltip from '@/components/canvas/HoverTooltip'
+import StatusBar from '@/components/layout/StatusBar'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useSchaltschrankStore } from '@/store/schaltschrankStore'
 import { useUIStore } from '@/store/uiStore'
@@ -108,6 +109,7 @@ export default function App() {
           </div>
           <PropertiesPanel simState={simState} />
         </div>
+        <StatusBar />
       </div>
 
       {/* Hover-Tooltip mit Bauteil-Infos */}

@@ -1,9 +1,12 @@
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSchaltschrankStore } from '@/store/schaltschrankStore'
 import { useUIStore } from '@/store/uiStore'
 import type { EditorMode } from '@/store/uiStore'
 import type { SimulationState } from '@/types/simulation'
 import SimulationPanel from '../simulation/SimulationPanel'
+import BomDialog from '../dialogs/BomDialog'
+import ShortcutsDialog from '../dialogs/ShortcutsDialog'
+import { exportPNG, exportSVG, contentSize } from '@/utils/exportImage'
 
 interface Props {
   simState: SimulationState | null
@@ -19,9 +22,34 @@ const MODES: Array<{ id: EditorMode; label: string; shortcut: string }> = [
 ]
 
 export default function TopBar({ simState, setSimState, trippedComponents, setTrippedComponents }: Props) {
-  const { schaltschrank, undo, redo, past, future, exportJSON, importJSON, addRail, updateProjectName } = useSchaltschrankStore()
-  const { mode, setMode, zoom, setZoom, exercisesOpen, toggleExercises } = useUIStore()
+  const { schaltschrank, undo, redo, past, future, exportJSON, importJSON, addRail, updateProjectName, reset } = useSchaltschrankStore()
+  const { mode, setMode, zoom, setZoom, setPan, exercisesOpen, toggleExercises, lightCanvas, toggleLightCanvas } = useUIStore()
   const fileRef = useRef<HTMLInputElement>(null)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [bomOpen, setBomOpen] = useState(false)
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
+
+  // "?" öffnet die Hilfe (außerhalb von Eingabefeldern)
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+      if (e.key === '?') { e.preventDefault(); setShortcutsOpen(true) }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  function zoomToFit() {
+    const svg = document.querySelector('svg')
+    if (!svg) return
+    const rect = svg.getBoundingClientRect()
+    const { width, height } = contentSize(schaltschrank)
+    const margin = 30
+    const z = Math.min((rect.width - margin * 2) / width, (rect.height - margin * 2) / height)
+    setZoom(Math.max(0.3, Math.min(3, z)))
+    setPan(margin, margin)
+  }
 
   function handleExport() {
     const json = exportJSON()
@@ -132,6 +160,7 @@ export default function TopBar({ simState, setSimState, trippedComponents, setTr
         <span className="text-xs font-mono text-slate-500 w-10 text-center">{Math.round(zoom * 100)}%</span>
         <button onClick={() => setZoom(zoom + 0.1)} className="text-xs px-1.5 py-1 rounded hover:bg-slate-800 text-slate-500">+</button>
         <button onClick={() => setZoom(1)} className="text-xs px-1 py-1 rounded hover:bg-slate-800 text-slate-600 ml-1">1:1</button>
+        <button onClick={zoomToFit} title="Alles einpassen" className="text-xs px-1.5 py-1 rounded hover:bg-slate-800 text-slate-500">⤢</button>
       </div>
 
       <div className="w-px h-5 bg-slate-700" />
@@ -175,7 +204,47 @@ export default function TopBar({ simState, setSimState, trippedComponents, setTr
           Speichern
         </button>
         <input ref={fileRef} type="file" accept=".json" onChange={handleImport} className="hidden" />
+
+        {/* Mehr-Menü */}
+        <div className="relative">
+          <button
+            onClick={() => setMenuOpen(o => !o)}
+            className="text-xs px-2.5 py-1 rounded font-medium transition-colors"
+            style={{ background: '#1e293b', color: '#64748b', border: '1px solid #334155' }}
+          >
+            ⋯ Mehr
+          </button>
+          {menuOpen && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+              <div
+                className="absolute right-0 mt-1 z-50 rounded shadow-2xl py-1 flex flex-col"
+                style={{ background: '#1e293b', border: '1px solid #334155', width: 200 }}
+              >
+                {[
+                  { label: '📋 Stückliste (BOM)', fn: () => setBomOpen(true) },
+                  { label: '🖼 Als PNG exportieren', fn: () => exportPNG(schaltschrank) },
+                  { label: '🖼 Als SVG exportieren', fn: () => exportSVG(schaltschrank) },
+                  { label: lightCanvas ? '🌙 Dunkler Hintergrund' : '☀ Heller Hintergrund', fn: toggleLightCanvas },
+                  { label: '⌨ Tastenkürzel & Hilfe', fn: () => setShortcutsOpen(true) },
+                  { label: '🗑 Alles zurücksetzen', fn: () => { if (confirm('Gesamten Schaltschrank löschen?')) reset() } },
+                ].map(item => (
+                  <button
+                    key={item.label}
+                    onClick={() => { item.fn(); setMenuOpen(false) }}
+                    className="text-left text-xs px-3 py-1.5 text-slate-300 hover:bg-slate-700 transition-colors"
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       </div>
+
+      <BomDialog open={bomOpen} onClose={() => setBomOpen(false)} />
+      <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
     </div>
   )
 }

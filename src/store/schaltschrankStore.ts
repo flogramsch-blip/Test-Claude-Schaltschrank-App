@@ -5,7 +5,26 @@ import type { Schaltschrank, Wire, DINRail } from '@/types/schaltschrank'
 import { createDefaultSchaltschrank } from '@/data/defaultSchaltschrank'
 import { COMPONENT_MAP } from '@/data/componentDefinitions'
 import { checkTECollision } from '@/utils/validation'
+import { nextDesignation } from '@/utils/designation'
 import type { Preset } from '@/data/presets'
+
+const AUTOSAVE_KEY = 'schaltschrank-autosave-v1'
+
+function loadAutosave(): Schaltschrank | null {
+  try {
+    const raw = localStorage.getItem(AUTOSAVE_KEY)
+    if (!raw) return null
+    const data = JSON.parse(raw)
+    if (data && Array.isArray(data.rails) && Array.isArray(data.wires)) return data as Schaltschrank
+  } catch { /* ignore */ }
+  return null
+}
+
+function saveAutosave(s: Schaltschrank) {
+  try {
+    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(s))
+  } catch { /* Speicher voll / nicht verfügbar – ignorieren */ }
+}
 
 interface HistoryEntry {
   schaltschrank: Schaltschrank
@@ -56,7 +75,7 @@ function pushHistory(past: HistoryEntry[], current: Schaltschrank): HistoryEntry
 }
 
 export const useSchaltschrankStore = create<SchaltschrankStore>((set, get) => ({
-  schaltschrank: createDefaultSchaltschrank(),
+  schaltschrank: loadAutosave() ?? createDefaultSchaltschrank(),
   past: [],
   future: [],
 
@@ -78,6 +97,8 @@ export const useSchaltschrankStore = create<SchaltschrankStore>((set, get) => ({
     if (tePosition + def.teWidth > rail.lengthTE) return null
 
     const instanceId = uuidv4()
+    // Automatisches Betriebsmittelkennzeichen (Q1, F1, K1 …)
+    const autoLabel = nextDesignation(state.schaltschrank.rails, definitionId)
     set(produce((draft: SchaltschrankStore) => {
       draft.past = pushHistory(draft.past, draft.schaltschrank)
       draft.future = []
@@ -89,7 +110,7 @@ export const useSchaltschrankStore = create<SchaltschrankStore>((set, get) => ({
         tePosition,
         settings: {
           nominalCurrent: def.electricalModel.nominalCurrentDefault,
-          label: '',
+          label: autoLabel,
         },
       })
       draft.schaltschrank.modifiedAt = new Date().toISOString()
@@ -358,6 +379,13 @@ export const useSchaltschrankStore = create<SchaltschrankStore>((set, get) => ({
     })
   },
 }))
+
+// Autosave: bei jeder Änderung des Schaltschranks in LocalStorage sichern
+useSchaltschrankStore.subscribe((state, prev) => {
+  if (state.schaltschrank !== prev.schaltschrank) {
+    saveAutosave(state.schaltschrank)
+  }
+})
 
 // Helper selectors
 export function getAllPlacedComponents(rails: DINRail[]) {
