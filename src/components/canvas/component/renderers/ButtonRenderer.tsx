@@ -4,9 +4,10 @@ import { TE_WIDTH_PX, RAIL_HEIGHT_PX } from '@/utils/teGrid'
 interface Props {
   def: ComponentDefinition
   placed: PC
+  pressed?: boolean
 }
 
-export default function ButtonRenderer({ def }: Props) {
+export default function ButtonRenderer({ def, pressed = false }: Props) {
   const w = def.teWidth * TE_WIDTH_PX
   const h = RAIL_HEIGHT_PX
   const cx = w / 2
@@ -18,6 +19,11 @@ export default function ButtonRenderer({ def }: Props) {
     <g>
       <rect x={0} y={0} width={w} height={h} rx={2} fill="#1e293b" />
       <rect x={2} y={2} width={w - 4} height={h - 4} rx={1} fill="#0f172a" />
+
+      {/* Betätigt-Ring (Simulation) */}
+      {pressed && (
+        <rect x={1} y={1} width={w - 2} height={h - 2} rx={2} fill="none" stroke="#22c55e" strokeWidth={2} />
+      )}
 
       {/* Yellow back-plate for emergency stop */}
       {isEmergency && (

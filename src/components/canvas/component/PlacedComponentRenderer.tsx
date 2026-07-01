@@ -20,15 +20,19 @@ interface Props {
   placed: PlacedComponent
   rail: DINRail
   simState?: ComponentSimState
+  controlOverride?: { closed?: boolean; energized?: boolean }
 }
 
-export default function PlacedComponentRenderer({ placed, rail, simState }: Props) {
+export default function PlacedComponentRenderer({ placed, rail, simState, controlOverride }: Props) {
   const mode = useUIStore(s => s.mode)
   const selectedId = useUIStore(s => s.selectedInstanceId)
   const selectComponent = useUIStore(s => s.selectComponent)
   const setHover = useUIStore(s => s.setHover)
   const clearHover = useUIStore(s => s.clearHover)
   const setPlacementPreview = useUIStore(s => s.setPlacementPreview)
+  const simulationRunning = useUIStore(s => s.simulationRunning)
+  const toggleButton = useUIStore(s => s.toggleButton)
+  const isPressed = useUIStore(s => s.pressedButtons.has(placed.instanceId))
   const removeComponent = useSchaltschrankStore(s => s.removeComponent)
   const moveComponent = useSchaltschrankStore(s => s.moveComponent)
   const rails = useSchaltschrankStore(s => s.schaltschrank.rails)
@@ -71,8 +75,16 @@ export default function PlacedComponentRenderer({ placed, rail, simState }: Prop
     return { railId: targetRail.id, tePosition, valid }
   }
 
+  const isSwitch = def.electricalModel.type === 'button' || def.electricalModel.type === 'selector' || def.electricalModel.type === 'emergency-stop'
+
   function handlePointerDown(e: React.PointerEvent) {
     if (mode === 'wire') return
+    // In der Simulation: Schalter/Taster betätigen statt auswählen
+    if (simulationRunning && isSwitch) {
+      e.stopPropagation()
+      toggleButton(placed.instanceId)
+      return
+    }
     if (mode === 'delete') {
       e.stopPropagation()
       removeComponent(placed.instanceId)
@@ -136,15 +148,15 @@ export default function PlacedComponentRenderer({ placed, rail, simState }: Prop
       case 'rcd':
         return <FIRenderer def={def!} placed={placed} tripped={tripped} />
       case 'contactor':
-        return <SchuetzRenderer def={def!} placed={placed} closed={simState?.closed} />
+        return <SchuetzRenderer def={def!} placed={placed} closed={controlOverride?.closed ?? simState?.closed} />
       case 'terminal':
         return <KlemmeRenderer def={def!} />
       case 'button':
       case 'selector':
       case 'emergency-stop':
-        return <ButtonRenderer def={def!} placed={placed} />
+        return <ButtonRenderer def={def!} placed={placed} pressed={isPressed} />
       case 'indicator':
-        return <LampRenderer def={def!} placed={placed} energized={simState?.energized} />
+        return <LampRenderer def={def!} placed={placed} energized={controlOverride?.energized ?? simState?.energized} />
       default:
         return <GenericRenderer def={def!} placed={placed} />
     }

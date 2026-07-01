@@ -14,13 +14,14 @@ interface Props {
 
 export default function SimulationPanel({ setSimState, trippedComponents, setTrippedComponents }: Props) {
   const schaltschrank = useSchaltschrankStore(s => s.schaltschrank)
-  const { simulationRunning, setSimulationRunning, faultWireId, setFaultWire } = useUIStore()
+  const { simulationRunning, setSimulationRunning, faultWireId, setFaultWire, resetButtons } = useUIStore()
   const [showSelectivity, setShowSelectivity] = useState(false)
 
   function handleStart() {
     const state = runSimulation(schaltschrank, [], trippedComponents)
     setSimState(state)
     setSimulationRunning(true)
+    resetButtons()
   }
 
   function handleStop() {
@@ -29,6 +30,7 @@ export default function SimulationPanel({ setSimState, trippedComponents, setTri
     setFaultWire(null)
     setTrippedComponents(new Set())
     setShowSelectivity(false)
+    resetButtons()
   }
 
   function handleFault() {

@@ -51,6 +51,8 @@ interface SchaltschrankStore {
   updateProjectName: (name: string) => void
 
   insertPreset: (preset: Preset) => void
+  duplicateComponent: (instanceId: string) => string | null
+  compactRail: (railId: string) => void
 
   undo: () => void
   redo: () => void
@@ -332,6 +334,58 @@ export const useSchaltschrankStore = create<SchaltschrankStore>((set, get) => ({
         })
       }
 
+      draft.schaltschrank.modifiedAt = new Date().toISOString()
+    }))
+  },
+
+  duplicateComponent: (instanceId) => {
+    const state = get()
+    const found = findPlacedComponent(state.schaltschrank.rails, instanceId)
+    if (!found) return null
+    const { component, rail } = found
+    const def = COMPONENT_MAP.get(component.definitionId)
+    if (!def) return null
+    // nächste freie Position auf derselben Schiene suchen
+    const occupied = rail.placedComponents.map(c => ({
+      tePosition: c.tePosition,
+      teWidth: COMPONENT_MAP.get(c.definitionId)?.teWidth ?? 1,
+      instanceId: c.instanceId,
+    }))
+    let tePos = component.tePosition + def.teWidth
+    while (tePos + def.teWidth <= rail.lengthTE && checkTECollision(tePos, def.teWidth, occupied)) {
+      tePos++
+    }
+    if (tePos + def.teWidth > rail.lengthTE) return null
+    const newId = uuidv4()
+    const autoLabel = nextDesignation(state.schaltschrank.rails, component.definitionId)
+    set(produce((draft: SchaltschrankStore) => {
+      draft.past = pushHistory(draft.past, draft.schaltschrank)
+      draft.future = []
+      const r = draft.schaltschrank.rails.find(rr => rr.id === rail.id)!
+      r.placedComponents.push({
+        instanceId: newId,
+        definitionId: component.definitionId,
+        railId: rail.id,
+        tePosition: tePos,
+        settings: { ...component.settings, label: autoLabel },
+      })
+      draft.schaltschrank.modifiedAt = new Date().toISOString()
+    }))
+    return newId
+  },
+
+  compactRail: (railId) => {
+    set(produce((draft: SchaltschrankStore) => {
+      const rail = draft.schaltschrank.rails.find(r => r.id === railId)
+      if (!rail) return
+      draft.past = pushHistory(draft.past, draft.schaltschrank)
+      draft.future = []
+      const sorted = [...rail.placedComponents].sort((a, b) => a.tePosition - b.tePosition)
+      let pos = 0
+      for (const c of sorted) {
+        c.tePosition = pos
+        pos += COMPONENT_MAP.get(c.definitionId)?.teWidth ?? 1
+      }
       draft.schaltschrank.modifiedAt = new Date().toISOString()
     }))
   },

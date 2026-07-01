@@ -1,5 +1,6 @@
 import type { DINRail } from '@/types/schaltschrank'
 import type { SimulationState } from '@/types/simulation'
+import type { ControlState } from '@/simulation/controlSim'
 import { useDroppable } from '@dnd-kit/core'
 import DINRailTrack from './DINRailTrack'
 import PlacedComponentRenderer, { PlacedComponentConnections } from '../component/PlacedComponentRenderer'
@@ -8,9 +9,10 @@ import { RAIL_TOP_OFFSET_PX, RAIL_X_OFFSET, ROW_TOTAL_HEIGHT_PX, TE_WIDTH_PX } f
 interface Props {
   rail: DINRail
   simState?: SimulationState
+  controlState?: ControlState | null
 }
 
-export default function DINRailRow({ rail, simState }: Props) {
+export default function DINRailRow({ rail, simState, controlState }: Props) {
   const { setNodeRef, isOver } = useDroppable({
     id: `rail-${rail.id}`,
     data: { railId: rail.id, railYPosition: rail.yPosition },
@@ -62,6 +64,10 @@ export default function DINRailRow({ rail, simState }: Props) {
           placed={placed}
           rail={rail}
           simState={simState?.componentStates.get(placed.instanceId)}
+          controlOverride={controlState ? {
+            closed: controlState.closedContactors.has(placed.instanceId),
+            energized: controlState.litLamps.has(placed.instanceId) || controlState.energizedCoils.has(placed.instanceId),
+          } : undefined}
         />
       ))}
 
