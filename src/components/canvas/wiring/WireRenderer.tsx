@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react'
-import { WIRE_COLORS, resolveConnectionPos } from '@/utils/teGrid'
-import { buildWirePath, buildCrossRailPath, autoChannelY } from '@/utils/wireRouting'
+import { WIRE_COLORS } from '@/utils/teGrid'
+import { buildWirePath, autoChannelY } from '@/utils/wireRouting'
 import type { Wire } from '@/types/schaltschrank'
 import type { DINRail } from '@/types/schaltschrank'
 import { COMPONENT_MAP } from '@/data/componentDefinitions'
+import { resolveWireEndpoint } from '@/utils/surfaceGeometry'
 import { useUIStore } from '@/store/uiStore'
 import { useSchaltschrankStore } from '@/store/schaltschrankStore'
 
@@ -29,47 +30,42 @@ export default function WireRenderer({ wire, rails, index, isSimRunning, isFault
   const selectWire = useUIStore(s => s.selectWire)
   const removeWire = useSchaltschrankStore(s => s.removeWire)
   const updateWire = useSchaltschrankStore(s => s.updateWire)
+  const schaltschrank = useSchaltschrankStore(s => s.schaltschrank)
   const isSelected = selectedWireId === wire.id
 
   const dragRef = useRef<{ startX: number; startY: number; moved: boolean } | null>(null)
   const [dragging, setDragging] = useState(false)
   const [hovered, setHovered] = useState(false)
 
-  // Find from component
+  // Endpunkte auf der Innen-Fläche auflösen (Schienen-Bauteil oder Übergabefeld-Pin)
+  const fromPos = resolveWireEndpoint(schaltschrank, wire.fromInstanceId, wire.fromConnectionId, 'interior')
+  const toPos = resolveWireEndpoint(schaltschrank, wire.toInstanceId, wire.toConnectionId, 'interior')
+  if (!fromPos || !toPos) return null
+
+  // Kontext für Routing / Laststrom (nur bei Schienen-Bauteilen)
   const fromRail = rails.find(r => r.placedComponents.some(c => c.instanceId === wire.fromInstanceId))
   const toRail = rails.find(r => r.placedComponents.some(c => c.instanceId === wire.toInstanceId))
-  if (!fromRail || !toRail) return null
+  const fromPlaced = fromRail?.placedComponents.find(c => c.instanceId === wire.fromInstanceId)
+  const fromDef = fromPlaced ? COMPONENT_MAP.get(fromPlaced.definitionId) : undefined
 
-  const fromPlaced = fromRail.placedComponents.find(c => c.instanceId === wire.fromInstanceId)
-  const toPlaced = toRail.placedComponents.find(c => c.instanceId === wire.toInstanceId)
-  if (!fromPlaced || !toPlaced) return null
-
-  const fromDef = COMPONENT_MAP.get(fromPlaced.definitionId)
-  const toDef = COMPONENT_MAP.get(toPlaced.definitionId)
-  if (!fromDef || !toDef) return null
-
-  const fromConn = fromDef.connections.find(c => c.id === wire.fromConnectionId)
-  const toConn = toDef.connections.find(c => c.id === wire.toConnectionId)
-  if (!fromConn || !toConn) return null
-
-  const fromPos = resolveConnectionPos(fromConn.relativeX, fromConn.relativeY, fromPlaced.tePosition, fromRail.yPosition)
-  const toPos = resolveConnectionPos(toConn.relativeX, toConn.relativeY, toPlaced.tePosition, toRail.yPosition)
-
-  const samRail = fromRail.id === toRail.id
+  const samRail = !!fromRail && fromRail === toRail
   const wpt = wire.waypoints?.[0]
-  const channelY = samRail ? (wpt?.y ?? autoChannelY(fromPos.y, toPos.y, index % 4, fromRail.yPosition)) : 0
-  const laneX = !samRail ? wpt?.x : undefined
-  const pathD = samRail
-    ? buildWirePath(fromPos.x, fromPos.y, toPos.x, toPos.y, index % 4, fromRail.yPosition, channelY)
-    : buildCrossRailPath(fromPos.x, fromPos.y, toPos.x, toPos.y, index % 6, laneX)
-
-  // Position des Zieh-Griffs (Mitte des horizontalen bzw. vertikalen Kanals)
-  const handleX = samRail ? (fromPos.x + toPos.x) / 2 : (laneX ?? (fromPos.x + toPos.x) / 2)
-  const handleY = samRail ? channelY : (fromPos.y + toPos.y) / 2
-
+  let pathD: string
+  let handleX: number, handleY: number
+  if (samRail) {
+    const channelY = wpt?.y ?? autoChannelY(fromPos.y, toPos.y, index % 4, fromRail!.yPosition)
+    pathD = buildWirePath(fromPos.x, fromPos.y, toPos.x, toPos.y, index % 4, fromRail!.yPosition, channelY)
+    handleX = (fromPos.x + toPos.x) / 2
+    handleY = channelY
+  } else {
+    // generisches orthogonales Routing (u. a. zum Übergabefeld)
+    const midY = wpt?.y ?? (fromPos.y + toPos.y) / 2
+    pathD = `M ${fromPos.x} ${fromPos.y} L ${fromPos.x} ${midY} L ${toPos.x} ${midY} L ${toPos.x} ${toPos.y}`
+    handleX = (fromPos.x + toPos.x) / 2
+    handleY = midY
+  }
   const baseColor = WIRE_COLORS[wire.color] ?? '#94a3b8'
-  const fromNominal = fromDef.electricalModel.nominalCurrentDefault
-  const nominal = fromPlaced.settings.nominalCurrent ?? fromNominal
+  const nominal = fromPlaced?.settings.nominalCurrent ?? fromDef?.electricalModel.nominalCurrentDefault ?? 0
   const loadRatio = current && nominal ? current / nominal : 0
   const showLoad = isSimRunning && !isFault && current != null && current > 0.01
   const color = showLoad ? loadColor(loadRatio) : baseColor
@@ -106,10 +102,8 @@ export default function WireRenderer({ wire, rails, index, isSimRunning, isFault
     st.moved = true
     const loc = canvasCoords(e.currentTarget as unknown as SVGGraphicsElement, e.clientX, e.clientY)
     if (!loc) return
-    // Kanal verschieben: gleich-Schiene → Y, kreuz-Schiene → X
-    updateWire(wire.id, {
-      waypoints: [{ x: samRail ? (fromPos.x + toPos.x) / 2 : loc.x, y: samRail ? loc.y : (fromPos.y + toPos.y) / 2 }],
-    })
+    // Kanal-Y der horizontalen Führung verschieben
+    updateWire(wire.id, { waypoints: [{ x: (fromPos!.x + toPos!.x) / 2, y: loc.y }] })
   }
 
   function handlePointerUp(e: React.PointerEvent) {

@@ -33,6 +33,17 @@ export interface PanelComponent {
 
 export type CrossingSystem = 'harting' | 'conduit' | 'terminal'
 
+/** Festes Übergabefeld (Klemmen-/Steckerblock) an der Gehäusewand,
+ *  auf beiden Flächen (Innenausbau + Außeneinheit) gespiegelt sichtbar. */
+export interface InterfacePanel {
+  id: string
+  label: string
+  system: 'harting' | 'terminal'
+  pinCount: number
+  interior: { x: number; y: number }
+  door: { x: number; y: number }
+}
+
 export interface Wire {
   id: string
   fromInstanceId: string
@@ -63,4 +74,5 @@ export interface Schaltschrank {
   rails: DINRail[]
   wires: Wire[]
   panelComponents?: PanelComponent[]  // Fronttür/Frontplatte (frei platziert)
+  interfacePanel?: InterfacePanel     // festes Übergabefeld (beide Flächen)
 }

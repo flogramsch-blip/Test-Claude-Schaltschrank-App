@@ -22,7 +22,7 @@ const MODES: Array<{ id: EditorMode; label: string; shortcut: string }> = [
 ]
 
 export default function TopBar({ simState, setSimState, trippedComponents, setTrippedComponents }: Props) {
-  const { schaltschrank, undo, redo, past, future, exportJSON, importJSON, addRail, updateProjectName, reset, compactRail } = useSchaltschrankStore()
+  const { schaltschrank, undo, redo, past, future, exportJSON, importJSON, addRail, updateProjectName, reset, compactRail, addInterfacePanel, removeInterfacePanel } = useSchaltschrankStore()
   const { mode, setMode, zoom, setZoom, setPan, exercisesOpen, toggleExercises, lightCanvas, toggleLightCanvas, openTutorial, showCabinetWall, toggleCabinetWall, toggleControlPanel, surface, setSurface, defaultCrossing, setDefaultCrossing } = useUIStore()
   const CROSSING_CYCLE = { harting: 'conduit', conduit: 'terminal', terminal: 'harting' } as const
   const CROSSING_NAME = { harting: 'Harting', conduit: 'Kabelschlauch', terminal: 'Klemme' } as const
@@ -202,6 +202,20 @@ export default function TopBar({ simState, setSimState, trippedComponents, setTr
         style={{ background: '#1e293b', color: '#64748b', border: '1px solid #334155' }}
       >
         + Hutschiene
+      </button>
+
+      {/* Übergabefeld */}
+      <button
+        onClick={() => schaltschrank.interfacePanel ? removeInterfacePanel() : addInterfacePanel()}
+        className="text-xs px-2.5 py-1 rounded font-medium transition-colors"
+        style={{
+          background: schaltschrank.interfacePanel ? '#1d4ed8' : '#1e293b',
+          color: schaltschrank.interfacePanel ? '#dbeafe' : '#64748b',
+          border: '1px solid ' + (schaltschrank.interfacePanel ? '#2563eb' : '#334155'),
+        }}
+        title="Festes Übergabefeld zwischen Innenausbau und Außeneinheit"
+      >
+        🔲 Übergabefeld
       </button>
 
       <div className="w-px h-5 bg-slate-700" />

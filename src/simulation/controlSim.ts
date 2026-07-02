@@ -48,32 +48,57 @@ export function computeControlState(
   for (const rail of s.rails) {
     for (const c of rail.placedComponents) register(c.instanceId, c.definitionId)
   }
-  // Frontplatten-Bauteile (Fronttür) gehören zum selben Steuernetz
   for (const c of s.panelComponents ?? []) register(c.instanceId, c.definitionId)
+  const ifaceId = s.interfacePanel?.id
 
-  // Nachbarschaft über Leitungen
-  const neighbors = new Map<string, Set<string>>()
-  const add = (a: string, b: string) => {
-    if (!neighbors.has(a)) neighbors.set(a, new Set())
-    neighbors.get(a)!.add(b)
+  // Durchgangs-Knoten: Klemmen/Durchführungen und Übergabefeld-Pins leiten durch.
+  const passThrough = (id: string) => (id === ifaceId) || byId.get(id)?.type === 'terminal'
+  // Knotenschlüssel: aktive Bauteile = ein Knoten (id); Durchgänge = pro Pin (id::conn)
+  const nodeOf = (id: string, conn: string) => (passThrough(id) ? `${id}::${conn}` : id)
+
+  const adj = new Map<string, Set<string>>()
+  const edge = (a: string, b: string) => {
+    if (!adj.has(a)) adj.set(a, new Set())
+    if (!adj.has(b)) adj.set(b, new Set())
+    adj.get(a)!.add(b); adj.get(b)!.add(a)
   }
   for (const w of s.wires) {
-    add(w.fromInstanceId, w.toInstanceId)
-    add(w.toInstanceId, w.fromInstanceId)
+    edge(nodeOf(w.fromInstanceId, w.fromConnectionId), nodeOf(w.toInstanceId, w.toConnectionId))
+  }
+  // Interne Brücken der Durchgangs-Bauteile (Klemme top↔bottom, Durchführung innen↔außen).
+  // Übergabefeld: KEINE internen Brücken – jeder Pin verbindet nur seine eigenen Leitungen.
+  for (const [id, c] of byId) {
+    if (c.type !== 'terminal') continue
+    const def = COMPONENT_MAP.get(c.definitionId)
+    const nodes = (def?.connections ?? []).map(cp => `${id}::${cp.id}`)
+    for (let i = 1; i < nodes.length; i++) edge(nodes[0], nodes[i])
   }
 
-  const isConductingSwitch = (id: string) => {
-    const c = byId.get(id)
-    return !!c && SWITCH_TYPES.has(c.type) && conducting(c.definitionId, pressed.has(id))
+  const conductingSwitchAt = (nodeKey: string) => {
+    const c = byId.get(nodeKey) // Schalter sind keine Durchgänge → Knoten = id
+    return !!c && SWITCH_TYPES.has(c.type) && conducting(c.definitionId, pressed.has(nodeKey))
+  }
+  const isPassNode = (nodeKey: string) => nodeKey.includes('::')
+
+  // Erreichbarkeit vom Startknoten aus – durch Durchgangs-Knoten hindurch.
+  function reaches(startId: string, pred: (nodeKey: string) => boolean): boolean {
+    const visited = new Set<string>([startId])
+    const queue = [...(adj.get(startId) ?? [])]
+    while (queue.length) {
+      const n = queue.shift()!
+      if (visited.has(n)) continue
+      visited.add(n)
+      if (pred(n)) return true
+      if (isPassNode(n)) for (const m of adj.get(n) ?? []) if (!visited.has(m)) queue.push(m)
+    }
+    return false
   }
 
   const energizedCoils = new Set<string>()
   const closedContactors = new Set<string>()
   for (const [id, c] of byId) {
     if (!COIL_TYPES.has(c.type)) continue
-    const ns = neighbors.get(id)
-    const inputActive = !!ns && [...ns].some(isConductingSwitch)
-    // resolveOutput erlaubt Zeitverzögerung (Zeitrelais anzug-/abfallverzögert)
+    const inputActive = reaches(id, conductingSwitchAt)
     if (resolveOutput(id, inputActive)) {
       energizedCoils.add(id)
       if (c.type === 'contactor') closedContactors.add(id)
@@ -83,11 +108,7 @@ export function computeControlState(
   const litLamps = new Set<string>()
   for (const [id, c] of byId) {
     if (c.type !== 'indicator') continue
-    const ns = neighbors.get(id)
-    if (!ns) continue
-    if ([...ns].some(n => isConductingSwitch(n) || energizedCoils.has(n))) {
-      litLamps.add(id)
-    }
+    if (reaches(id, n => conductingSwitchAt(n) || energizedCoils.has(n))) litLamps.add(id)
   }
 
   return { energizedCoils, closedContactors, litLamps }

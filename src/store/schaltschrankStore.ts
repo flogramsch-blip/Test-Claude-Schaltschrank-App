@@ -57,6 +57,11 @@ interface SchaltschrankStore {
   addPanelComponent: (definitionId: string, x: number, y: number) => string | null
   movePanelComponent: (instanceId: string, x: number, y: number) => void
 
+  addInterfacePanel: () => void
+  removeInterfacePanel: () => void
+  updateInterfacePanel: (updates: Partial<import('@/types/schaltschrank').InterfacePanel>) => void
+  moveInterfacePanel: (surface: 'interior' | 'door', x: number, y: number) => void
+
   undo: () => void
   redo: () => void
 
@@ -377,6 +382,61 @@ export const useSchaltschrankStore = create<SchaltschrankStore>((set, get) => ({
     set(produce((draft: SchaltschrankStore) => {
       const pc = draft.schaltschrank.panelComponents?.find(c => c.instanceId === instanceId)
       if (pc) { pc.x = Math.round(x); pc.y = Math.round(y); draft.schaltschrank.modifiedAt = new Date().toISOString() }
+    }))
+  },
+
+  addInterfacePanel: () => {
+    set(produce((draft: SchaltschrankStore) => {
+      if (draft.schaltschrank.interfacePanel) return
+      draft.past = pushHistory(draft.past, draft.schaltschrank)
+      draft.future = []
+      draft.schaltschrank.interfacePanel = {
+        id: uuidv4(),
+        label: 'X1',
+        system: 'harting',
+        pinCount: 8,
+        interior: { x: 60, y: 300 },
+        door: { x: 60, y: 380 },
+      }
+      draft.schaltschrank.modifiedAt = new Date().toISOString()
+    }))
+  },
+
+  removeInterfacePanel: () => {
+    set(produce((draft: SchaltschrankStore) => {
+      const p = draft.schaltschrank.interfacePanel
+      if (!p) return
+      draft.past = pushHistory(draft.past, draft.schaltschrank)
+      draft.future = []
+      draft.schaltschrank.wires = draft.schaltschrank.wires.filter(w => w.fromInstanceId !== p.id && w.toInstanceId !== p.id)
+      draft.schaltschrank.interfacePanel = undefined
+      draft.schaltschrank.modifiedAt = new Date().toISOString()
+    }))
+  },
+
+  updateInterfacePanel: (updates) => {
+    set(produce((draft: SchaltschrankStore) => {
+      const p = draft.schaltschrank.interfacePanel
+      if (!p) return
+      Object.assign(p, updates)
+      // Beim Verkleinern: Leitungen zu entfallenden Pins löschen
+      if (updates.pinCount != null) {
+        p.pinCount = Math.max(1, Math.min(48, updates.pinCount))
+        draft.schaltschrank.wires = draft.schaltschrank.wires.filter(w => {
+          const check = (id: string, conn: string) => id === p.id && parseInt(conn.replace('p', ''), 10) >= p.pinCount
+          return !check(w.fromInstanceId, w.fromConnectionId) && !check(w.toInstanceId, w.toConnectionId)
+        })
+      }
+      draft.schaltschrank.modifiedAt = new Date().toISOString()
+    }))
+  },
+
+  moveInterfacePanel: (surface, x, y) => {
+    set(produce((draft: SchaltschrankStore) => {
+      const p = draft.schaltschrank.interfacePanel
+      if (!p) return
+      p[surface] = { x: Math.round(x), y: Math.round(y) }
+      draft.schaltschrank.modifiedAt = new Date().toISOString()
     }))
   },
 

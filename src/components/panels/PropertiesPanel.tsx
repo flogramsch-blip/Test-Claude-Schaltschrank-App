@@ -1,10 +1,11 @@
-import { useSchaltschrankStore, findPlacedComponent } from '@/store/schaltschrankStore'
+import { useSchaltschrankStore, findAnyComponent } from '@/store/schaltschrankStore'
 import { useUIStore } from '@/store/uiStore'
 import { COMPONENT_MAP } from '@/data/componentDefinitions'
 import type { ComponentSimState } from '@/types/simulation'
 import { WIRE_COLORS } from '@/utils/teGrid'
 import { WIRE_COLOR_OPTIONS } from '../canvas/wiring/WireColorPicker'
 import type { WireColor } from '@/types/components'
+import InterfacePanelConfig from './InterfacePanelConfig'
 
 interface Props {
   simState: { componentStates: Map<string, ComponentSimState> } | null
@@ -21,8 +22,14 @@ export default function PropertiesPanel({ simState }: Props) {
 
   const selectedWire = schaltschrank.wires.find(w => w.id === selectedWireId)
 
+  // Übergabefeld ausgewählt → eigene Konfiguration
+  const iface = schaltschrank.interfacePanel
+  if (iface && selectedInstanceId === iface.id) {
+    return <InterfacePanelConfig />
+  }
+
   if (selectedInstanceId) {
-    const found = findPlacedComponent(schaltschrank.rails, selectedInstanceId)
+    const found = findAnyComponent(schaltschrank, selectedInstanceId)
     if (!found) return <EmptyPanel />
     const { component: placed } = found
     const def = COMPONENT_MAP.get(placed.definitionId)

@@ -11,6 +11,7 @@ import { resolvePanelConnectionPos } from './panelGeometry'
 import WireInProgress from '@/components/canvas/wiring/WireInProgress'
 import WireColorPicker from '@/components/canvas/wiring/WireColorPicker'
 import CrossingStub from '@/components/canvas/CrossingStub'
+import InterfacePanelBlock from '@/components/canvas/InterfacePanelBlock'
 
 export default function DoorCanvas() {
   const svgRef = useRef<SVGSVGElement>(null)
@@ -39,10 +40,16 @@ export default function DoorCanvas() {
   function mm(e: React.MouseEvent) { if (panStart.current) setPan(e.clientX - panStart.current.x, e.clientY - panStart.current.y) }
   function mu(e: React.MouseEvent) { if (e.button === 1 || e.button === 2) panStart.current = null }
 
-  // Leitungen einteilen: rein-Frontplatte vs. flächenübergreifend
+  // Leitungen einteilen. DoorWireRenderer filtert selbst (auf Tür auflösbar).
+  // Direkte flächenübergreifende Leitungen (Schiene ↔ Frontplatte, ohne
+  // Übergabefeld) werden als Durchführung dargestellt.
+  const ifaceId = schaltschrank.interfacePanel?.id
   const isPanel = (id: string) => panels.some(p => p.instanceId === id)
-  const doorWires = schaltschrank.wires.filter(w => isPanel(w.fromInstanceId) && isPanel(w.toInstanceId))
-  const crossWires = schaltschrank.wires.filter(w => isPanel(w.fromInstanceId) !== isPanel(w.toInstanceId))
+  const isRail = (id: string) => schaltschrank.rails.some(r => r.placedComponents.some(c => c.instanceId === id))
+  const crossWires = schaltschrank.wires.filter(w =>
+    w.fromInstanceId !== ifaceId && w.toInstanceId !== ifaceId &&
+    (isPanel(w.fromInstanceId) ? isRail(w.toInstanceId) : (isPanel(w.toInstanceId) && isRail(w.fromInstanceId)))
+  )
 
   return (
     <div
@@ -64,8 +71,13 @@ export default function DoorCanvas() {
           <rect x={702} y={200} width={10} height={60} rx={3} fill="#64748b" />
           <text x={20} y={30} fontSize={11} fill="#64748b" fontFamily="monospace">Fronttür / Bedienfeld</text>
 
-          {/* Frontplatten-Leitungen */}
-          {doorWires.map(w => <DoorWireRenderer key={w.id} wire={w} panels={panels} />)}
+          {/* Übergabefeld (Außeneinheit-Seite, gespiegelt) */}
+          {schaltschrank.interfacePanel && (
+            <InterfacePanelBlock panel={schaltschrank.interfacePanel} surface="door" />
+          )}
+
+          {/* Tür-Leitungen (Frontplatte und/oder Übergabefeld) – Renderer filtert selbst */}
+          {schaltschrank.wires.map(w => <DoorWireRenderer key={w.id} wire={w} />)}
 
           {/* Flächenübergreifende Leitungen: Durchführung am Frontplatten-Ende */}
           {crossWires.map(w => {

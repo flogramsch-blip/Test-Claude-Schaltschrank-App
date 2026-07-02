@@ -8,6 +8,7 @@ import WireColorPicker from './wiring/WireColorPicker'
 import PlacementShadow from './PlacementShadow'
 import CabinetWall from './CabinetWall'
 import CrossingStub from './CrossingStub'
+import InterfacePanelBlock from './InterfacePanelBlock'
 import { useControlState } from '@/simulation/useControlState'
 import { resolveConnectionPos } from '@/utils/teGrid'
 import { COMPONENT_MAP } from '@/data/componentDefinitions'
@@ -117,13 +118,21 @@ export default function SchaltschrankCanvas({ simState }: Props) {
               />
             ))}
 
-            {/* Flächenübergreifende Leitungen (Innenausbau-Ende): Stub + Fronttür-Verweis */}
+            {/* Übergabefeld (Innenausbau-Seite) */}
+            {schaltschrank.interfacePanel && (
+              <InterfacePanelBlock panel={schaltschrank.interfacePanel} surface="interior" />
+            )}
+
+            {/* Direkte flächenübergreifende Leitungen (Schiene ↔ Frontplatte, ohne Übergabefeld) */}
             {(() => {
               const panels = schaltschrank.panelComponents ?? []
               if (panels.length === 0) return null
+              const ifaceId = schaltschrank.interfacePanel?.id
               const isPanel = (id: string) => panels.some(p => p.instanceId === id)
               const railById = new Map(schaltschrank.rails.flatMap(r => r.placedComponents.map(c => [c.instanceId, { c, rail: r }] as const)))
-              return schaltschrank.wires.filter(w => isPanel(w.fromInstanceId) !== isPanel(w.toInstanceId)).map(w => {
+              return schaltschrank.wires
+                .filter(w => w.fromInstanceId !== ifaceId && w.toInstanceId !== ifaceId && isPanel(w.fromInstanceId) !== isPanel(w.toInstanceId))
+                .map(w => {
                 const railId = isPanel(w.fromInstanceId) ? w.toInstanceId : w.fromInstanceId
                 const railConnId = isPanel(w.fromInstanceId) ? w.toConnectionId : w.fromConnectionId
                 const panelId = isPanel(w.fromInstanceId) ? w.fromInstanceId : w.toInstanceId

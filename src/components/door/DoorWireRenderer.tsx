@@ -1,40 +1,30 @@
 import { useRef, useState } from 'react'
-import type { Wire, PanelComponent } from '@/types/schaltschrank'
-import { COMPONENT_MAP } from '@/data/componentDefinitions'
+import type { Wire } from '@/types/schaltschrank'
 import { WIRE_COLORS } from '@/utils/teGrid'
 import { useUIStore } from '@/store/uiStore'
 import { useSchaltschrankStore } from '@/store/schaltschrankStore'
-import { resolvePanelConnectionPos } from './panelGeometry'
+import { resolveWireEndpoint } from '@/utils/surfaceGeometry'
 
 interface Props {
   wire: Wire
-  panels: PanelComponent[]
 }
 
-/** Leitung zwischen zwei Frontplatten-Bauteilen */
-export default function DoorWireRenderer({ wire, panels }: Props) {
+/** Leitung auf der Fronttür (Frontplatten-Bauteile und/oder Übergabefeld-Pins) */
+export default function DoorWireRenderer({ wire }: Props) {
   const selectedWireId = useUIStore(s => s.selectedWireId)
   const mode = useUIStore(s => s.mode)
   const selectWire = useUIStore(s => s.selectWire)
   const removeWire = useSchaltschrankStore(s => s.removeWire)
   const updateWire = useSchaltschrankStore(s => s.updateWire)
+  const schaltschrank = useSchaltschrankStore(s => s.schaltschrank)
   const isSelected = selectedWireId === wire.id
   const dragRef = useRef<{ moved: boolean } | null>(null)
   const [dragging, setDragging] = useState(false)
   const [hovered, setHovered] = useState(false)
 
-  const from = panels.find(p => p.instanceId === wire.fromInstanceId)
-  const to = panels.find(p => p.instanceId === wire.toInstanceId)
-  if (!from || !to) return null
-  const fromDef = COMPONENT_MAP.get(from.definitionId)
-  const toDef = COMPONENT_MAP.get(to.definitionId)
-  if (!fromDef || !toDef) return null
-  const fromCp = fromDef.connections.find(c => c.id === wire.fromConnectionId)
-  const toCp = toDef.connections.find(c => c.id === wire.toConnectionId)
-  if (!fromCp || !toCp) return null
-
-  const a = resolvePanelConnectionPos(from, fromCp)
-  const b = resolvePanelConnectionPos(to, toCp)
+  const a = resolveWireEndpoint(schaltschrank, wire.fromInstanceId, wire.fromConnectionId, 'door')
+  const b = resolveWireEndpoint(schaltschrank, wire.toInstanceId, wire.toConnectionId, 'door')
+  if (!a || !b) return null
   const midY = wire.waypoints?.[0]?.y ?? (a.y + b.y) / 2
   const pathD = `M ${a.x} ${a.y} L ${a.x} ${midY} L ${b.x} ${midY} L ${b.x} ${b.y}`
   const color = WIRE_COLORS[wire.color] ?? '#94a3b8'
@@ -59,7 +49,7 @@ export default function DoorWireRenderer({ wire, panels }: Props) {
     dragRef.current.moved = true
     if (!dragging) setDragging(true)
     const loc = canvasCoords(e.currentTarget as unknown as SVGGraphicsElement, e.clientX, e.clientY)
-    if (loc) updateWire(wire.id, { waypoints: [{ x: (a.x + b.x) / 2, y: loc.y }] })
+    if (loc) updateWire(wire.id, { waypoints: [{ x: (a!.x + b!.x) / 2, y: loc.y }] })
   }
   function onUp(e: React.PointerEvent) {
     dragRef.current = null; setDragging(false)
