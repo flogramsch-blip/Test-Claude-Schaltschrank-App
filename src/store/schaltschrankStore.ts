@@ -390,13 +390,18 @@ export const useSchaltschrankStore = create<SchaltschrankStore>((set, get) => ({
       if (draft.schaltschrank.interfacePanel) return
       draft.past = pushHistory(draft.past, draft.schaltschrank)
       draft.future = []
+      // Industriestecker: vertikal an der rechten Gehäusewand
+      const rightEdge = draft.schaltschrank.rails.reduce(
+        (m, r) => Math.max(m, 40 + r.lengthTE * 18), 400
+      )
       draft.schaltschrank.interfacePanel = {
         id: uuidv4(),
         label: 'X1',
         system: 'harting',
         pinCount: 8,
-        interior: { x: 60, y: 300 },
-        door: { x: 60, y: 380 },
+        orientation: 'vertical',
+        interior: { x: rightEdge + 16, y: 100 },
+        door: { x: 640, y: 100 },
       }
       draft.schaltschrank.modifiedAt = new Date().toISOString()
     }))

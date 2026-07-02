@@ -40,6 +40,7 @@ export interface InterfacePanel {
   label: string
   system: 'harting' | 'terminal'
   pinCount: number
+  orientation?: 'horizontal' | 'vertical'  // vertikal = Industriestecker an der Seitenwand
   interior: { x: number; y: number }
   door: { x: number; y: number }
 }

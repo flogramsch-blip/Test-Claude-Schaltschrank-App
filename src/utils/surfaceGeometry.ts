@@ -24,12 +24,21 @@ export function interfacePanelWidth(pinCount: number): number {
 }
 export const IFACE_HEIGHT = 34
 
-/** Position eines Pins im Übergabefeld (pro Fläche). Pins sitzen an der Oberkante. */
+/** Blockmaße abhängig von der Ausrichtung (vertikal = Industriestecker Seitenwand) */
+export function interfacePanelSize(panel: InterfacePanel): { w: number; h: number } {
+  const len = interfacePanelWidth(panel.pinCount)
+  return panel.orientation === 'vertical' ? { w: IFACE_HEIGHT, h: len } : { w: len, h: IFACE_HEIGHT }
+}
+
+/** Position eines Pins im Übergabefeld (pro Fläche).
+ *  Horizontal: Anschlüsse an der Oberkante. Vertikal: an der linken Kante. */
 export function resolveInterfacePinPos(panel: InterfacePanel, surface: 'interior' | 'door', pinIndex: number): { x: number; y: number } {
   const pos = surface === 'interior' ? panel.interior : panel.door
-  const x = pos.x + IFACE_PAD + pinIndex * IFACE_PIN_SPACING + IFACE_PIN_SPACING / 2
-  const y = pos.y - 6
-  return { x, y }
+  const offset = IFACE_PAD + pinIndex * IFACE_PIN_SPACING + IFACE_PIN_SPACING / 2
+  if (panel.orientation === 'vertical') {
+    return { x: pos.x - 6, y: pos.y + offset }
+  }
+  return { x: pos.x + offset, y: pos.y - 6 }
 }
 
 /** Übergabefeld-Pins als Connection-Points (für die Verdrahtung) */
