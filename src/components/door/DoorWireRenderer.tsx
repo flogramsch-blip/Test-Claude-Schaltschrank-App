@@ -21,6 +21,7 @@ export default function DoorWireRenderer({ wire, panels }: Props) {
   const isSelected = selectedWireId === wire.id
   const dragRef = useRef<{ moved: boolean } | null>(null)
   const [dragging, setDragging] = useState(false)
+  const [hovered, setHovered] = useState(false)
 
   const from = panels.find(p => p.instanceId === wire.fromInstanceId)
   const to = panels.find(p => p.instanceId === wire.toInstanceId)
@@ -69,11 +70,14 @@ export default function DoorWireRenderer({ wire, panels }: Props) {
     <g
       style={{ cursor: mode === 'delete' ? 'not-allowed' : dragging ? 'grabbing' : 'grab' }}
       onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onClick={e => e.stopPropagation()}
+      onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
     >
-      <path d={pathD} stroke="transparent" strokeWidth={12} fill="none" />
-      <path d={pathD} stroke={color} strokeWidth={isSelected ? 3.5 : 2.5} fill="none" strokeLinecap="round" strokeLinejoin="round"
-        style={{ filter: isSelected ? 'drop-shadow(0 0 3px #f59e0b)' : 'none' }} />
-      {isSelected && <circle cx={(a.x + b.x) / 2} cy={midY} r={4.5} fill="#f59e0b" stroke="#0f172a" strokeWidth={1} />}
+      <path d={pathD} stroke="transparent" strokeWidth={18} fill="none" />
+      <path d={pathD} stroke={color} strokeWidth={isSelected || hovered ? 3.7 : 2.5} fill="none" strokeLinecap="round" strokeLinejoin="round"
+        style={{ filter: isSelected ? 'drop-shadow(0 0 3px #f59e0b)' : hovered ? 'drop-shadow(0 0 2px #f59e0b)' : 'none' }} />
+      {(isSelected || hovered) && <circle cx={(a.x + b.x) / 2} cy={midY} r={5} fill="#f59e0b" stroke="#0f172a" strokeWidth={1} opacity={isSelected ? 1 : 0.7}>
+        <title>Leitung verschieben (ziehen)</title>
+      </circle>}
     </g>
   )
 }

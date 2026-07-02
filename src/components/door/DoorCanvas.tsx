@@ -51,7 +51,7 @@ export default function DoorCanvas() {
       style={{ background: lightCanvas ? '#cbd5e1' : 'linear-gradient(135deg,#111827 0%,#1f2937 100%)' }}
       onContextMenu={e => e.preventDefault()}
     >
-      <svg ref={svgRef} width="100%" height="100%"
+      <svg ref={svgRef} id="door-svg" width="100%" height="100%"
         style={{ cursor: wireDrawing.active ? 'crosshair' : mode === 'delete' ? 'not-allowed' : 'default' }}
         onWheel={handleWheel} onPointerMove={handlePointerMove} onClick={handleCanvasClick}
         onMouseDown={md} onMouseMove={mm} onMouseUp={mu}

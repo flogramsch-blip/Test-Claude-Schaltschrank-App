@@ -33,6 +33,7 @@ export default function WireRenderer({ wire, rails, index, isSimRunning, isFault
 
   const dragRef = useRef<{ startX: number; startY: number; moved: boolean } | null>(null)
   const [dragging, setDragging] = useState(false)
+  const [hovered, setHovered] = useState(false)
 
   // Find from component
   const fromRail = rails.find(r => r.placedComponents.some(c => c.instanceId === wire.fromInstanceId))
@@ -124,28 +125,30 @@ export default function WireRenderer({ wire, rails, index, isSimRunning, isFault
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onClick={e => e.stopPropagation()}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
-      {/* Fat invisible hit target */}
-      <path d={pathD} stroke="transparent" strokeWidth={12} fill="none" />
+      {/* Breite unsichtbare Trefferfläche (leichtes Greifen) */}
+      <path d={pathD} stroke="transparent" strokeWidth={18} fill="none" />
 
       {/* Actual wire */}
       <path
         d={pathD}
         stroke={isFault ? '#dc2626' : color}
-        strokeWidth={strokeWidth}
+        strokeWidth={isSelected || hovered ? strokeWidth + 1.2 : strokeWidth}
         fill="none"
         strokeLinecap="round"
         strokeLinejoin="round"
         className={isSimRunning && !isFault ? 'wire-animated' : ''}
         style={{
-          filter: isSelected ? 'drop-shadow(0 0 3px #f59e0b)' : isFault ? 'drop-shadow(0 0 4px #dc2626)' : 'none',
+          filter: isSelected ? 'drop-shadow(0 0 3px #f59e0b)' : hovered ? 'drop-shadow(0 0 2px #f59e0b)' : isFault ? 'drop-shadow(0 0 4px #dc2626)' : 'none',
         }}
       />
 
-      {/* Zieh-Griff wenn ausgewählt */}
-      {isSelected && mode !== 'delete' && (
-        <circle cx={handleX} cy={handleY} r={4.5} fill="#f59e0b" stroke="#0f172a" strokeWidth={1}>
-          <title>Leitung verschieben</title>
+      {/* Zieh-Griff bei Auswahl ODER Hover (zeigt: verschiebbar) */}
+      {(isSelected || hovered) && mode !== 'delete' && (
+        <circle cx={handleX} cy={handleY} r={5} fill="#f59e0b" stroke="#0f172a" strokeWidth={1} opacity={isSelected ? 1 : 0.7}>
+          <title>Leitung verschieben (ziehen)</title>
         </circle>
       )}
 

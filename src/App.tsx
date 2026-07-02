@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import {
   DndContext,
   DragOverlay,
@@ -23,7 +23,7 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useSchaltschrankStore } from '@/store/schaltschrankStore'
 import { useUIStore } from '@/store/uiStore'
 import { COMPONENT_MAP } from '@/data/componentDefinitions'
-import { TE_WIDTH_PX } from '@/utils/teGrid'
+import { TE_WIDTH_PX, RAIL_X_OFFSET } from '@/utils/teGrid'
 import { placementValidity } from '@/utils/validation'
 import DoorCanvas from '@/components/door/DoorCanvas'
 import { PANEL_CELL } from '@/components/door/PanelComponentRenderer'
@@ -36,19 +36,27 @@ export default function App() {
   const addComponent = useSchaltschrankStore(s => s.addComponent)
   const addPanelComponent = useSchaltschrankStore(s => s.addPanelComponent)
   const rails = useSchaltschrankStore(s => s.schaltschrank.rails)
-  const zoom = useUIStore(s => s.zoom)
-  const panX = useUIStore(s => s.panX)
-  const panY = useUIStore(s => s.panY)
   const surface = useUIStore(s => s.surface)
   const setPlacementPreview = useUIStore(s => s.setPlacementPreview)
 
   useKeyboardShortcuts()
 
+  // Echte Cursor-Position mitschreiben – zuverlässiger als activator+delta,
+  // da dnd-kit delta beim Auto-Scroll der Palette verfälscht.
+  const lastPointer = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => { lastPointer.current = { x: e.clientX, y: e.clientY } }
+    window.addEventListener('pointermove', onMove, true)
+    return () => window.removeEventListener('pointermove', onMove, true)
+  }, [])
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } })
   )
 
-  // Zielposition aus einem dnd-kit-Event bestimmen (Palette → Schiene)
+  // Zielposition aus einem dnd-kit-Event bestimmen (Palette → Schiene).
+  // TE-Position über die CTM der Innen-Zeichenfläche + echte Cursor-Position
+  // (robust gegen Auto-Scroll-Verfälschung von event.delta).
   function targetFromEvent(event: DragEndEvent): { railId: string; definitionId: string; tePosition: number } | null {
     const { active, over } = event
     if (!over) return null
@@ -57,10 +65,14 @@ export default function App() {
     const definitionId = active.data.current?.definitionId as string
     if (!definitionId) return null
     const railId = overId.replace('rail-', '')
-    const activator = event.activatorEvent as PointerEvent | undefined
-    const pointerX = (activator?.clientX ?? over.rect.left) + event.delta.x
-    const offsetX = pointerX - over.rect.left
-    const tePosition = Math.max(0, Math.round(offsetX / (TE_WIDTH_PX * zoom)))
+    const svgEl = document.getElementById('interior-svg') as SVGSVGElement | null
+    const g = svgEl?.querySelector('g') as SVGGraphicsElement | null
+    const ctm = g?.getScreenCTM()
+    if (!svgEl || !ctm) return null
+    const pt = svgEl.createSVGPoint()
+    pt.x = lastPointer.current.x; pt.y = lastPointer.current.y
+    const loc = pt.matrixTransform(ctm.inverse())
+    const tePosition = Math.max(0, Math.round((loc.x - RAIL_X_OFFSET) / TE_WIDTH_PX))
     return { railId, definitionId, tePosition }
   }
 
@@ -88,14 +100,20 @@ export default function App() {
     if (!over) return
     const definitionId = active.data.current?.definitionId as string
     if (!definitionId) return
-    // Drop auf die Fronttür → frei platzieren
+    // Drop auf die Fronttür → frei platzieren.
+    // Position robust über die CTM der Türplatten-Gruppe umrechnen
+    // (unabhängig von Scroll/Messung – over.rect ist dafür unzuverlässig).
     if (String(over.id) === 'door-panel') {
-      const activator = event.activatorEvent as PointerEvent | undefined
-      const px = (activator?.clientX ?? over.rect.left) + event.delta.x
-      const py = (activator?.clientY ?? over.rect.top) + event.delta.y
-      const x = (px - over.rect.left - panX) / zoom - PANEL_CELL / 2
-      const y = (py - over.rect.top - panY) / zoom - PANEL_CELL / 2
-      addPanelComponent(definitionId, x, y)
+      const { x: px, y: py } = lastPointer.current
+      const svgEl = document.getElementById('door-svg') as SVGSVGElement | null
+      const g = svgEl?.querySelector('g') as SVGGraphicsElement | null
+      const ctm = g?.getScreenCTM()
+      if (svgEl && ctm) {
+        const pt = svgEl.createSVGPoint()
+        pt.x = px; pt.y = py
+        const loc = pt.matrixTransform(ctm.inverse())
+        addPanelComponent(definitionId, loc.x - PANEL_CELL / 2, loc.y - PANEL_CELL / 2)
+      }
       return
     }
     const t = targetFromEvent(event)

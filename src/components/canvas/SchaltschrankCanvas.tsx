@@ -76,6 +76,7 @@ export default function SchaltschrankCanvas({ simState }: Props) {
       >
         <svg
           ref={svgRef}
+          id="interior-svg"
           width="100%"
           height="100%"
           style={{ cursor: wireDrawing.active ? 'crosshair' : mode === 'delete' ? 'not-allowed' : 'default' }}
