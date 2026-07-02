@@ -33,6 +33,7 @@ interface UIStore {
   lightCanvas: boolean
   showCabinetWall: boolean
   controlPanelOpen: boolean
+  surface: 'interior' | 'door'
   tutorialOpen: boolean
 
   setMode: (mode: EditorMode) => void
@@ -58,6 +59,7 @@ interface UIStore {
   toggleLightCanvas: () => void
   toggleCabinetWall: () => void
   toggleControlPanel: () => void
+  setSurface: (surface: 'interior' | 'door') => void
   openTutorial: () => void
   closeTutorial: () => void
 }
@@ -94,6 +96,7 @@ export const useUIStore = create<UIStore>((set) => ({
   lightCanvas: false,
   showCabinetWall: true,
   controlPanelOpen: false,
+  surface: 'interior',
   tutorialOpen: !tutorialSeen(),
 
   setMode: (mode) => set({ mode, selectedInstanceId: null, selectedWireId: null }),
@@ -153,6 +156,7 @@ export const useUIStore = create<UIStore>((set) => ({
   toggleLightCanvas: () => set(s => ({ lightCanvas: !s.lightCanvas })),
   toggleCabinetWall: () => set(s => ({ showCabinetWall: !s.showCabinetWall })),
   toggleControlPanel: () => set(s => ({ controlPanelOpen: !s.controlPanelOpen })),
+  setSurface: (surface) => set({ surface, selectedInstanceId: null, selectedWireId: null }),
   openTutorial: () => set({ tutorialOpen: true }),
   closeTutorial: () => {
     try { localStorage.setItem('tutorial-seen-v1', '1') } catch { /* ignore */ }

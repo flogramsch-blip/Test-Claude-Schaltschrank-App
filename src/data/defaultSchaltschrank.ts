@@ -25,5 +25,6 @@ export function createDefaultSchaltschrank(): Schaltschrank {
       },
     ],
     wires: [],
+    panelComponents: [],
   }
 }

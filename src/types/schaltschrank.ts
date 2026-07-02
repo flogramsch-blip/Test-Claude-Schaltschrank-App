@@ -22,6 +22,15 @@ export interface PlacedComponent {
   }
 }
 
+/** Frei platziertes HMI-Gerät auf der Fronttür/Frontplatte */
+export interface PanelComponent {
+  instanceId: string
+  definitionId: string
+  x: number   // freie Position auf der Frontplatte (px)
+  y: number
+  settings: PlacedComponent['settings']
+}
+
 export interface Wire {
   id: string
   fromInstanceId: string
@@ -50,4 +59,5 @@ export interface Schaltschrank {
   modifiedAt: string
   rails: DINRail[]
   wires: Wire[]
+  panelComponents?: PanelComponent[]  // Fronttür/Frontplatte (frei platziert)
 }

@@ -8,6 +8,8 @@ import WireColorPicker from './wiring/WireColorPicker'
 import PlacementShadow from './PlacementShadow'
 import CabinetWall from './CabinetWall'
 import { useControlState } from '@/simulation/useControlState'
+import { resolveConnectionPos } from '@/utils/teGrid'
+import { COMPONENT_MAP } from '@/data/componentDefinitions'
 import type { SimulationState } from '@/types/simulation'
 
 interface Props {
@@ -112,6 +114,34 @@ export default function SchaltschrankCanvas({ simState }: Props) {
                 controlState={controlState}
               />
             ))}
+
+            {/* Flächenübergreifende Leitungen (Innenausbau-Ende): Stub + Fronttür-Verweis */}
+            {(() => {
+              const panels = schaltschrank.panelComponents ?? []
+              if (panels.length === 0) return null
+              const isPanel = (id: string) => panels.some(p => p.instanceId === id)
+              const railById = new Map(schaltschrank.rails.flatMap(r => r.placedComponents.map(c => [c.instanceId, { c, rail: r }] as const)))
+              return schaltschrank.wires.filter(w => isPanel(w.fromInstanceId) !== isPanel(w.toInstanceId)).map(w => {
+                const railId = isPanel(w.fromInstanceId) ? w.toInstanceId : w.fromInstanceId
+                const railConnId = isPanel(w.fromInstanceId) ? w.toConnectionId : w.fromConnectionId
+                const panelId = isPanel(w.fromInstanceId) ? w.fromInstanceId : w.toInstanceId
+                const entry = railById.get(railId)
+                if (!entry) return null
+                const def = COMPONENT_MAP.get(entry.c.definitionId)
+                const cp = def?.connections.find(c => c.id === railConnId)
+                if (!cp) return null
+                const pos = resolveConnectionPos(cp.relativeX, cp.relativeY, entry.c.tePosition, entry.rail.yPosition)
+                const panel = panels.find(p => p.instanceId === panelId)
+                const pLabel = panel ? (panel.settings.label || COMPONENT_MAP.get(panel.definitionId)?.shortName) : 'Tür'
+                const up = cp.relativeY === 0
+                return (
+                  <g key={w.id} pointerEvents="none">
+                    <line x1={pos.x} y1={pos.y} x2={pos.x} y2={up ? pos.y - 12 : pos.y + 12} stroke="#f59e0b" strokeWidth={2} strokeDasharray="3 2" />
+                    <text x={pos.x} y={up ? pos.y - 15 : pos.y + 22} textAnchor="middle" fontSize={7} fill="#f59e0b" fontFamily="monospace">⇄ {pLabel}</text>
+                  </g>
+                )
+              })
+            })()}
 
             {/* Platzierungs-Schatten (Vorschau beim Ziehen) */}
             <PlacementShadow />

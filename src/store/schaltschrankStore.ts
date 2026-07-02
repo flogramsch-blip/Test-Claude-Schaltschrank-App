@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { produce } from 'immer'
 import { v4 as uuidv4 } from 'uuid'
-import type { Schaltschrank, Wire, DINRail } from '@/types/schaltschrank'
+import type { Schaltschrank, Wire, DINRail, PlacedComponent } from '@/types/schaltschrank'
 import { createDefaultSchaltschrank } from '@/data/defaultSchaltschrank'
 import { COMPONENT_MAP } from '@/data/componentDefinitions'
 import { checkTECollision } from '@/utils/validation'
@@ -53,6 +53,9 @@ interface SchaltschrankStore {
   insertPreset: (preset: Preset) => void
   duplicateComponent: (instanceId: string) => string | null
   compactRail: (railId: string) => void
+
+  addPanelComponent: (definitionId: string, x: number, y: number) => string | null
+  movePanelComponent: (instanceId: string, x: number, y: number) => void
 
   undo: () => void
   redo: () => void
@@ -183,6 +186,10 @@ export const useSchaltschrankStore = create<SchaltschrankStore>((set, get) => ({
           break
         }
       }
+      // Auch von der Frontplatte entfernen
+      if (draft.schaltschrank.panelComponents) {
+        draft.schaltschrank.panelComponents = draft.schaltschrank.panelComponents.filter(c => c.instanceId !== instanceId)
+      }
       // Also remove all wires connected to this component
       draft.schaltschrank.wires = draft.schaltschrank.wires.filter(
         w => w.fromInstanceId !== instanceId && w.toInstanceId !== instanceId
@@ -197,9 +204,12 @@ export const useSchaltschrankStore = create<SchaltschrankStore>((set, get) => ({
         const c = rail.placedComponents.find(c => c.instanceId === instanceId)
         if (c) {
           Object.assign(c.settings, settings)
-          break
+          draft.schaltschrank.modifiedAt = new Date().toISOString()
+          return
         }
       }
+      const pc = draft.schaltschrank.panelComponents?.find(c => c.instanceId === instanceId)
+      if (pc) Object.assign(pc.settings, settings)
       draft.schaltschrank.modifiedAt = new Date().toISOString()
     }))
   },
@@ -338,6 +348,38 @@ export const useSchaltschrankStore = create<SchaltschrankStore>((set, get) => ({
     }))
   },
 
+  addPanelComponent: (definitionId, x, y) => {
+    const def = COMPONENT_MAP.get(definitionId)
+    if (!def) return null
+    const instanceId = uuidv4()
+    const state = get()
+    const autoLabel = nextDesignation(state.schaltschrank.rails, definitionId)
+    set(produce((draft: SchaltschrankStore) => {
+      draft.past = pushHistory(draft.past, draft.schaltschrank)
+      draft.future = []
+      if (!draft.schaltschrank.panelComponents) draft.schaltschrank.panelComponents = []
+      draft.schaltschrank.panelComponents.push({
+        instanceId,
+        definitionId,
+        x: Math.round(x),
+        y: Math.round(y),
+        settings: {
+          nominalCurrent: def.electricalModel.nominalCurrentDefault,
+          label: autoLabel,
+        },
+      })
+      draft.schaltschrank.modifiedAt = new Date().toISOString()
+    }))
+    return instanceId
+  },
+
+  movePanelComponent: (instanceId, x, y) => {
+    set(produce((draft: SchaltschrankStore) => {
+      const pc = draft.schaltschrank.panelComponents?.find(c => c.instanceId === instanceId)
+      if (pc) { pc.x = Math.round(x); pc.y = Math.round(y); draft.schaltschrank.modifiedAt = new Date().toISOString() }
+    }))
+  },
+
   duplicateComponent: (instanceId) => {
     const state = get()
     const found = findPlacedComponent(state.schaltschrank.rails, instanceId)
@@ -451,5 +493,15 @@ export function findPlacedComponent(rails: DINRail[], instanceId: string) {
     const c = rail.placedComponents.find(c => c.instanceId === instanceId)
     if (c) return { component: c, rail }
   }
+  return null
+}
+
+/** Sucht ein Bauteil in Innenausbau ODER Frontplatte; liefert Settings-Träger + Fläche */
+export function findAnyComponent(s: Schaltschrank, instanceId: string):
+  { component: { instanceId: string; definitionId: string; settings: PlacedComponent['settings'] }; surface: 'interior' | 'door' } | null {
+  const inner = findPlacedComponent(s.rails, instanceId)
+  if (inner) return { component: inner.component, surface: 'interior' }
+  const pc = s.panelComponents?.find(c => c.instanceId === instanceId)
+  if (pc) return { component: pc, surface: 'door' }
   return null
 }

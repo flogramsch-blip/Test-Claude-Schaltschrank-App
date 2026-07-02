@@ -33,12 +33,11 @@ export function useControlState(schaltschrank: Schaltschrank): ControlState | nu
   const settingsById = new Map<string, { definitionId: string; timerMode?: string; timerSeconds?: number }>()
   for (const rail of schaltschrank.rails) {
     for (const c of rail.placedComponents) {
-      settingsById.set(c.instanceId, {
-        definitionId: c.definitionId,
-        timerMode: c.settings.timerMode,
-        timerSeconds: c.settings.timerSeconds,
-      })
+      settingsById.set(c.instanceId, { definitionId: c.definitionId, timerMode: c.settings.timerMode, timerSeconds: c.settings.timerSeconds })
     }
+  }
+  for (const c of schaltschrank.panelComponents ?? []) {
+    settingsById.set(c.instanceId, { definitionId: c.definitionId, timerMode: c.settings.timerMode, timerSeconds: c.settings.timerSeconds })
   }
 
   function resolveOutput(id: string, inputActive: boolean): boolean {

@@ -23,7 +23,7 @@ const MODES: Array<{ id: EditorMode; label: string; shortcut: string }> = [
 
 export default function TopBar({ simState, setSimState, trippedComponents, setTrippedComponents }: Props) {
   const { schaltschrank, undo, redo, past, future, exportJSON, importJSON, addRail, updateProjectName, reset, compactRail } = useSchaltschrankStore()
-  const { mode, setMode, zoom, setZoom, setPan, exercisesOpen, toggleExercises, lightCanvas, toggleLightCanvas, openTutorial, showCabinetWall, toggleCabinetWall, toggleControlPanel } = useUIStore()
+  const { mode, setMode, zoom, setZoom, setPan, exercisesOpen, toggleExercises, lightCanvas, toggleLightCanvas, openTutorial, showCabinetWall, toggleCabinetWall, toggleControlPanel, surface, setSurface } = useUIStore()
   const fileRef = useRef<HTMLInputElement>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [bomOpen, setBomOpen] = useState(false)
@@ -89,6 +89,25 @@ export default function TopBar({ simState, setSimState, trippedComponents, setTr
         className="bg-transparent text-slate-200 font-semibold text-sm outline-none border-b border-transparent focus:border-slate-600 min-w-0"
         style={{ width: 140 }}
       />
+
+      <div className="w-px h-5 bg-slate-700" />
+
+      {/* Flächen-Umschalter: Innenausbau / Fronttür */}
+      <div className="flex rounded overflow-hidden" style={{ border: '1px solid #334155' }}>
+        {([['interior', '🔧 Innenausbau'], ['door', '🚪 Fronttür']] as const).map(([id, label]) => (
+          <button
+            key={id}
+            onClick={() => setSurface(id)}
+            className="px-2.5 py-1 text-xs font-medium transition-colors"
+            style={{
+              background: surface === id ? '#1d4ed8' : '#1e293b',
+              color: surface === id ? '#dbeafe' : '#64748b',
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
       <div className="w-px h-5 bg-slate-700" />
 

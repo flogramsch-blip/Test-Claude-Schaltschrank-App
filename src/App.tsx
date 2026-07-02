@@ -25,6 +25,8 @@ import { useUIStore } from '@/store/uiStore'
 import { COMPONENT_MAP } from '@/data/componentDefinitions'
 import { TE_WIDTH_PX } from '@/utils/teGrid'
 import { placementValidity } from '@/utils/validation'
+import DoorCanvas from '@/components/door/DoorCanvas'
+import { PANEL_CELL } from '@/components/door/PanelComponentRenderer'
 
 export default function App() {
   const [simState, setSimState] = useState<SimulationState | null>(null)
@@ -32,8 +34,12 @@ export default function App() {
   const [dragDefId, setDragDefId] = useState<string | null>(null)
 
   const addComponent = useSchaltschrankStore(s => s.addComponent)
+  const addPanelComponent = useSchaltschrankStore(s => s.addPanelComponent)
   const rails = useSchaltschrankStore(s => s.schaltschrank.rails)
   const zoom = useUIStore(s => s.zoom)
+  const panX = useUIStore(s => s.panX)
+  const panY = useUIStore(s => s.panY)
+  const surface = useUIStore(s => s.surface)
   const setPlacementPreview = useUIStore(s => s.setPlacementPreview)
 
   useKeyboardShortcuts()
@@ -78,6 +84,20 @@ export default function App() {
   function handleDragEnd(event: DragEndEvent) {
     setDragDefId(null)
     setPlacementPreview(null)
+    const { active, over } = event
+    if (!over) return
+    const definitionId = active.data.current?.definitionId as string
+    if (!definitionId) return
+    // Drop auf die Fronttür → frei platzieren
+    if (String(over.id) === 'door-panel') {
+      const activator = event.activatorEvent as PointerEvent | undefined
+      const px = (activator?.clientX ?? over.rect.left) + event.delta.x
+      const py = (activator?.clientY ?? over.rect.top) + event.delta.y
+      const x = (px - over.rect.left - panX) / zoom - PANEL_CELL / 2
+      const y = (py - over.rect.top - panY) / zoom - PANEL_CELL / 2
+      addPanelComponent(definitionId, x, y)
+      return
+    }
     const t = targetFromEvent(event)
     if (t) addComponent(t.definitionId, t.railId, t.tePosition)
   }
@@ -107,7 +127,7 @@ export default function App() {
         <div className="flex flex-1 overflow-hidden">
           <ComponentPalette />
           <div className="relative flex flex-1 overflow-hidden">
-            <SchaltschrankCanvas simState={simState} />
+            {surface === 'interior' ? <SchaltschrankCanvas simState={simState} /> : <DoorCanvas />}
             <ExercisePanel />
             <ValidationPanel />
           </div>

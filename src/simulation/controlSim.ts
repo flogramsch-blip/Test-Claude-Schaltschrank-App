@@ -41,12 +41,15 @@ export function computeControlState(
   resolveOutput: (instanceId: string, inputActive: boolean) => boolean = (_id, a) => a
 ): ControlState {
   const byId = new Map<string, { definitionId: string; type: string }>()
-  for (const rail of s.rails) {
-    for (const c of rail.placedComponents) {
-      const def = COMPONENT_MAP.get(c.definitionId)
-      if (def) byId.set(c.instanceId, { definitionId: c.definitionId, type: def.electricalModel.type })
-    }
+  const register = (instanceId: string, definitionId: string) => {
+    const def = COMPONENT_MAP.get(definitionId)
+    if (def) byId.set(instanceId, { definitionId, type: def.electricalModel.type })
   }
+  for (const rail of s.rails) {
+    for (const c of rail.placedComponents) register(c.instanceId, c.definitionId)
+  }
+  // Frontplatten-Bauteile (Fronttür) gehören zum selben Steuernetz
+  for (const c of s.panelComponents ?? []) register(c.instanceId, c.definitionId)
 
   // Nachbarschaft über Leitungen
   const neighbors = new Map<string, Set<string>>()
