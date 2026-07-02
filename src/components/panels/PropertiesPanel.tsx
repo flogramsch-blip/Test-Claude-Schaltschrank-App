@@ -271,6 +271,28 @@ export default function PropertiesPanel({ simState }: Props) {
             />
           </label>
 
+          {/* Durchführung (nur bei flächenübergreifenden Leitungen) */}
+          {(() => {
+            const panelIds = new Set((schaltschrank.panelComponents ?? []).map(p => p.instanceId))
+            const crossSurface = panelIds.has(selectedWire.fromInstanceId) !== panelIds.has(selectedWire.toInstanceId)
+            if (!crossSurface) return null
+            return (
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-slate-400">Durchführung (Außen ↔ Innen)</span>
+                <select
+                  value={selectedWire.crossing ?? 'harting'}
+                  onChange={e => updateWire(selectedWireId, { crossing: e.target.value as 'harting' | 'conduit' | 'terminal' })}
+                  className="bg-slate-800 text-slate-100 text-sm px-2 py-1.5 rounded border border-slate-700"
+                >
+                  <option value="harting">Harting-Steckverbinder</option>
+                  <option value="conduit">Kabelschlauch / Wellrohr</option>
+                  <option value="terminal">Reihenklemme (Durchgang)</option>
+                </select>
+                <span className="text-xs text-slate-600">Übergabe zwischen Fronttür und Innenausbau</span>
+              </label>
+            )
+          })()}
+
           <button
             onClick={() => removeWire(selectedWireId)}
             className="mt-auto w-full py-2 text-sm rounded font-semibold"

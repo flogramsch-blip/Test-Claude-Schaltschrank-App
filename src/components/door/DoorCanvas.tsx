@@ -10,11 +10,12 @@ import DoorWireRenderer from './DoorWireRenderer'
 import { resolvePanelConnectionPos } from './panelGeometry'
 import WireInProgress from '@/components/canvas/wiring/WireInProgress'
 import WireColorPicker from '@/components/canvas/wiring/WireColorPicker'
+import CrossingStub from '@/components/canvas/CrossingStub'
 
 export default function DoorCanvas() {
   const svgRef = useRef<SVGSVGElement>(null)
   const schaltschrank = useSchaltschrankStore(s => s.schaltschrank)
-  const { zoom, panX, panY, setZoom, setPan, updateWireDrawingMouse, cancelWireDrawing, wireDrawing, mode, selectComponent, selectWire, lightCanvas } = useUIStore()
+  const { zoom, panX, panY, setZoom, setPan, updateWireDrawingMouse, cancelWireDrawing, wireDrawing, mode, selectComponent, selectWire, lightCanvas, defaultCrossing } = useUIStore()
   const { setNodeRef } = useDroppable({ id: 'door-panel' })
   const panels = schaltschrank.panelComponents ?? []
   const controlState = useControlState(schaltschrank)
@@ -66,7 +67,7 @@ export default function DoorCanvas() {
           {/* Frontplatten-Leitungen */}
           {doorWires.map(w => <DoorWireRenderer key={w.id} wire={w} panels={panels} />)}
 
-          {/* Flächenübergreifende Leitungen: Stub am Frontplatten-Ende */}
+          {/* Flächenübergreifende Leitungen: Durchführung am Frontplatten-Ende */}
           {crossWires.map(w => {
             const panelId = isPanel(w.fromInstanceId) ? w.fromInstanceId : w.toInstanceId
             const panelConnId = isPanel(w.fromInstanceId) ? w.fromConnectionId : w.toConnectionId
@@ -77,13 +78,10 @@ export default function DoorCanvas() {
             if (!cp) return null
             const pos = resolvePanelConnectionPos(pc, cp)
             const other = findPlacedComponent(schaltschrank.rails, otherId)
-            const otherLabel = other ? (other.component.settings.label || COMPONENT_MAP.get(other.component.definitionId)?.shortName) : '?'
-            const up = cp.relativeY === 0
+            const otherLabel = other ? (other.component.settings.label || (COMPONENT_MAP.get(other.component.definitionId)?.shortName ?? '?')) : '?'
             return (
-              <g key={w.id} pointerEvents="none">
-                <line x1={pos.x} y1={pos.y} x2={pos.x} y2={up ? pos.y - 14 : pos.y + 14} stroke="#f59e0b" strokeWidth={2} strokeDasharray="3 2" />
-                <text x={pos.x} y={up ? pos.y - 17 : pos.y + 24} textAnchor="middle" fontSize={7} fill="#f59e0b" fontFamily="monospace">⇄ {otherLabel}</text>
-              </g>
+              <CrossingStub key={w.id} wireId={w.id} x={pos.x} y={pos.y} up={cp.relativeY === 0}
+                label={otherLabel} crossing={w.crossing ?? defaultCrossing} />
             )
           })}
 

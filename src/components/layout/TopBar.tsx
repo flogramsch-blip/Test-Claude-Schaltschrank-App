@@ -23,7 +23,9 @@ const MODES: Array<{ id: EditorMode; label: string; shortcut: string }> = [
 
 export default function TopBar({ simState, setSimState, trippedComponents, setTrippedComponents }: Props) {
   const { schaltschrank, undo, redo, past, future, exportJSON, importJSON, addRail, updateProjectName, reset, compactRail } = useSchaltschrankStore()
-  const { mode, setMode, zoom, setZoom, setPan, exercisesOpen, toggleExercises, lightCanvas, toggleLightCanvas, openTutorial, showCabinetWall, toggleCabinetWall, toggleControlPanel, surface, setSurface } = useUIStore()
+  const { mode, setMode, zoom, setZoom, setPan, exercisesOpen, toggleExercises, lightCanvas, toggleLightCanvas, openTutorial, showCabinetWall, toggleCabinetWall, toggleControlPanel, surface, setSurface, defaultCrossing, setDefaultCrossing } = useUIStore()
+  const CROSSING_CYCLE = { harting: 'conduit', conduit: 'terminal', terminal: 'harting' } as const
+  const CROSSING_NAME = { harting: 'Harting', conduit: 'Kabelschlauch', terminal: 'Klemme' } as const
   const fileRef = useRef<HTMLInputElement>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [bomOpen, setBomOpen] = useState(false)
@@ -255,6 +257,7 @@ export default function TopBar({ simState, setSimState, trippedComponents, setTr
                   { label: '🖼 Als SVG exportieren', fn: () => exportSVG(schaltschrank) },
                   { label: lightCanvas ? '🌙 Dunkler Hintergrund' : '☀ Heller Hintergrund', fn: toggleLightCanvas },
                   { label: showCabinetWall ? '⬜ Gehäusewand ausblenden' : '⬛ Gehäusewand einblenden', fn: toggleCabinetWall },
+                  { label: `🔌 Durchführung-Standard: ${CROSSING_NAME[defaultCrossing]}`, fn: () => setDefaultCrossing(CROSSING_CYCLE[defaultCrossing]) },
                   { label: '↔ Lücken schließen', fn: () => schaltschrank.rails.forEach(r => compactRail(r.id)) },
                   { label: '🎓 Tutorial anzeigen', fn: openTutorial },
                   { label: '⌨ Tastenkürzel & Hilfe', fn: () => setShortcutsOpen(true) },

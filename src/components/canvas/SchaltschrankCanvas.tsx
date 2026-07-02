@@ -7,6 +7,7 @@ import WireInProgress from './wiring/WireInProgress'
 import WireColorPicker from './wiring/WireColorPicker'
 import PlacementShadow from './PlacementShadow'
 import CabinetWall from './CabinetWall'
+import CrossingStub from './CrossingStub'
 import { useControlState } from '@/simulation/useControlState'
 import { resolveConnectionPos } from '@/utils/teGrid'
 import { COMPONENT_MAP } from '@/data/componentDefinitions'
@@ -19,7 +20,7 @@ interface Props {
 export default function SchaltschrankCanvas({ simState }: Props) {
   const svgRef = useRef<SVGSVGElement>(null)
   const { schaltschrank } = useSchaltschrankStore()
-  const { zoom, panX, panY, setZoom, setPan, updateWireDrawingMouse, cancelWireDrawing, wireDrawing, mode, selectComponent, selectWire, faultWireId, lightCanvas } = useUIStore()
+  const { zoom, panX, panY, setZoom, setPan, updateWireDrawingMouse, cancelWireDrawing, wireDrawing, mode, selectComponent, selectWire, faultWireId, lightCanvas, defaultCrossing } = useUIStore()
 
   const controlState = useControlState(schaltschrank)
 
@@ -132,13 +133,10 @@ export default function SchaltschrankCanvas({ simState }: Props) {
                 if (!cp) return null
                 const pos = resolveConnectionPos(cp.relativeX, cp.relativeY, entry.c.tePosition, entry.rail.yPosition)
                 const panel = panels.find(p => p.instanceId === panelId)
-                const pLabel = panel ? (panel.settings.label || COMPONENT_MAP.get(panel.definitionId)?.shortName) : 'Tür'
-                const up = cp.relativeY === 0
+                const pLabel = panel ? (panel.settings.label || (COMPONENT_MAP.get(panel.definitionId)?.shortName ?? 'Tür')) : 'Tür'
                 return (
-                  <g key={w.id} pointerEvents="none">
-                    <line x1={pos.x} y1={pos.y} x2={pos.x} y2={up ? pos.y - 12 : pos.y + 12} stroke="#f59e0b" strokeWidth={2} strokeDasharray="3 2" />
-                    <text x={pos.x} y={up ? pos.y - 15 : pos.y + 22} textAnchor="middle" fontSize={7} fill="#f59e0b" fontFamily="monospace">⇄ {pLabel}</text>
-                  </g>
+                  <CrossingStub key={w.id} wireId={w.id} x={pos.x} y={pos.y} up={cp.relativeY === 0}
+                    label={pLabel} crossing={w.crossing ?? defaultCrossing} />
                 )
               })
             })()}

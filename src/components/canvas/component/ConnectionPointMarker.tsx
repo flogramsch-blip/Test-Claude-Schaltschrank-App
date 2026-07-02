@@ -18,7 +18,9 @@ export default function ConnectionPointMarker({ cp, instanceId, absoluteX, absol
   const startWireDrawing = useUIStore(s => s.startWireDrawing)
   const cancelWireDrawing = useUIStore(s => s.cancelWireDrawing)
   const pendingColor = useUIStore(s => s.wireDrawing.pendingColor)
+  const defaultCrossing = useUIStore(s => s.defaultCrossing)
   const addWire = useSchaltschrankStore(s => s.addWire)
+  const panelComponents = useSchaltschrankStore(s => s.schaltschrank.panelComponents)
 
   const wires = useSchaltschrankStore(s => s.schaltschrank.wires)
   const connectedWiresCount = wires.filter(
@@ -47,6 +49,9 @@ export default function ConnectionPointMarker({ cp, instanceId, absoluteX, absol
         cancelWireDrawing()
         return
       }
+      // Flächenübergreifend? → Durchführung (Harting/Kabelschlauch/Klemme) zuweisen
+      const isPanel = (id: string) => (panelComponents ?? []).some(p => p.instanceId === id)
+      const crossSurface = isPanel(wireDrawing.fromInstanceId!) !== isPanel(instanceId)
       addWire({
         fromInstanceId: wireDrawing.fromInstanceId!,
         fromConnectionId: wireDrawing.fromConnectionId!,
@@ -54,6 +59,7 @@ export default function ConnectionPointMarker({ cp, instanceId, absoluteX, absol
         toConnectionId: cp.id,
         color: pendingColor as WireColor,
         crossSection: 1.5,
+        ...(crossSurface ? { crossing: defaultCrossing } : {}),
       })
       cancelWireDrawing()
     } else {

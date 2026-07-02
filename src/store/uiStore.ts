@@ -34,6 +34,7 @@ interface UIStore {
   showCabinetWall: boolean
   controlPanelOpen: boolean
   surface: 'interior' | 'door'
+  defaultCrossing: 'harting' | 'conduit' | 'terminal'
   tutorialOpen: boolean
 
   setMode: (mode: EditorMode) => void
@@ -60,6 +61,7 @@ interface UIStore {
   toggleCabinetWall: () => void
   toggleControlPanel: () => void
   setSurface: (surface: 'interior' | 'door') => void
+  setDefaultCrossing: (c: 'harting' | 'conduit' | 'terminal') => void
   openTutorial: () => void
   closeTutorial: () => void
 }
@@ -97,6 +99,7 @@ export const useUIStore = create<UIStore>((set) => ({
   showCabinetWall: true,
   controlPanelOpen: false,
   surface: 'interior',
+  defaultCrossing: 'harting',
   tutorialOpen: !tutorialSeen(),
 
   setMode: (mode) => set({ mode, selectedInstanceId: null, selectedWireId: null }),
@@ -157,6 +160,7 @@ export const useUIStore = create<UIStore>((set) => ({
   toggleCabinetWall: () => set(s => ({ showCabinetWall: !s.showCabinetWall })),
   toggleControlPanel: () => set(s => ({ controlPanelOpen: !s.controlPanelOpen })),
   setSurface: (surface) => set({ surface, selectedInstanceId: null, selectedWireId: null }),
+  setDefaultCrossing: (c) => set({ defaultCrossing: c }),
   openTutorial: () => set({ tutorialOpen: true }),
   closeTutorial: () => {
     try { localStorage.setItem('tutorial-seen-v1', '1') } catch { /* ignore */ }

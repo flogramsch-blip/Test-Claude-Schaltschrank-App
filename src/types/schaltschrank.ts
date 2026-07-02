@@ -31,6 +31,8 @@ export interface PanelComponent {
   settings: PlacedComponent['settings']
 }
 
+export type CrossingSystem = 'harting' | 'conduit' | 'terminal'
+
 export interface Wire {
   id: string
   fromInstanceId: string
@@ -41,6 +43,7 @@ export interface Wire {
   crossSection?: number  // mm²
   label?: string
   waypoints: Array<{ x: number; y: number }>
+  crossing?: CrossingSystem  // Durchführung bei flächenübergreifenden Leitungen
 }
 
 export interface DINRail {
