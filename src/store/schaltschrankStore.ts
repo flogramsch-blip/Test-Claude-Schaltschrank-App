@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid'
 import type { Schaltschrank, Wire, DINRail, PlacedComponent } from '@/types/schaltschrank'
 import { createDefaultSchaltschrank } from '@/data/defaultSchaltschrank'
 import { COMPONENT_MAP } from '@/data/componentDefinitions'
-import { checkTECollision } from '@/utils/validation'
+import { checkTECollision, mountAllowed } from '@/utils/validation'
 import { nextDesignation } from '@/utils/designation'
 import type { Preset } from '@/data/presets'
 
@@ -41,7 +41,7 @@ interface SchaltschrankStore {
   updateComponentSettings: (instanceId: string, settings: Record<string, unknown>) => void
   updateComponentLabel: (instanceId: string, label: string) => void
 
-  addRail: (lengthTE?: number) => void
+  addRail: (lengthTE?: number, railType?: 'din' | 'sps') => void
   removeRail: (railId: string) => void
 
   addWire: (wire: Omit<Wire, 'id' | 'waypoints'>) => void
@@ -105,6 +105,7 @@ export const useSchaltschrankStore = create<SchaltschrankStore>((set, get) => ({
     const collision = checkTECollision(tePosition, def.teWidth, existing)
     if (collision) return null
     if (tePosition + def.teWidth > rail.lengthTE) return null
+    if (!mountAllowed(def, rail)) return null
 
     const instanceId = uuidv4()
     // Automatisches Betriebsmittelkennzeichen (Q1, F1, K1 …)
@@ -152,6 +153,7 @@ export const useSchaltschrankStore = create<SchaltschrankStore>((set, get) => ({
     const collision = checkTECollision(newTePosition, def.teWidth, existing)
     if (collision) return false
     if (newTePosition < 0 || newTePosition + def.teWidth > targetRail.lengthTE) return false
+    if (!mountAllowed(def, targetRail)) return false
 
     set(produce((draft: SchaltschrankStore) => {
       draft.past = pushHistory(draft.past, draft.schaltschrank)
@@ -228,7 +230,7 @@ export const useSchaltschrankStore = create<SchaltschrankStore>((set, get) => ({
     }))
   },
 
-  addRail: (lengthTE = 36) => {
+  addRail: (lengthTE = 36, railType = 'din') => {
     const lastRail = get().schaltschrank.rails.at(-1)
     const yPos = lastRail ? lastRail.yPosition + 170 : 60
     set(produce((draft: SchaltschrankStore) => {
@@ -236,10 +238,13 @@ export const useSchaltschrankStore = create<SchaltschrankStore>((set, get) => ({
       draft.future = []
       draft.schaltschrank.rails.push({
         id: uuidv4(),
-        label: `Hutschiene ${draft.schaltschrank.rails.length + 1}`,
+        label: railType === 'sps'
+          ? `SPS-Schiene ${draft.schaltschrank.rails.filter(r => r.railType === 'sps').length + 1}`
+          : `Hutschiene ${draft.schaltschrank.rails.filter(r => (r.railType ?? 'din') === 'din').length + 1}`,
         lengthTE,
         yPosition: yPos,
         placedComponents: [],
+        railType,
       })
     }))
   },

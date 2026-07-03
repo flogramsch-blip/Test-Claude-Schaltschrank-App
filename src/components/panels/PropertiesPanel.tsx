@@ -6,6 +6,7 @@ import { WIRE_COLORS } from '@/utils/teGrid'
 import { WIRE_COLOR_OPTIONS } from '../canvas/wiring/WireColorPicker'
 import type { WireColor } from '@/types/components'
 import InterfacePanelConfig from './InterfacePanelConfig'
+import { printOperandList } from '@/utils/operandList'
 
 interface Props {
   simState: { componentStates: Map<string, ComponentSimState> } | null
@@ -205,6 +206,35 @@ export default function PropertiesPanel({ simState }: Props) {
             </div>
           )}
 
+          {/* SPS: Ein-/Ausgänge benennen + Operandenliste */}
+          {def.electricalModel.type === 'plc' && (
+            <div className="border border-slate-700 rounded p-2">
+              <div className="text-xs font-semibold text-slate-400 mb-2">Ein-/Ausgänge (Operanden)</div>
+              <div className="flex flex-col gap-1 max-h-64 overflow-y-auto">
+                {def.connections.map(cp => (
+                  <div key={cp.id} className="flex items-center gap-1.5">
+                    <span className="shrink-0 font-mono text-xs" style={{ width: 42, color: cp.type === 'input' ? '#38bdf8' : '#fbbf24' }}>{cp.label}</span>
+                    <input
+                      value={placed.settings.ioNames?.[cp.id] ?? ''}
+                      onChange={e => updateComponentSettings(placed.instanceId, {
+                        ioNames: { ...(placed.settings.ioNames ?? {}), [cp.id]: e.target.value },
+                      })}
+                      placeholder="symbol. Name"
+                      className="flex-1 min-w-0 bg-slate-800 text-slate-100 text-xs px-1.5 py-1 rounded border border-slate-700 outline-none focus:border-blue-500"
+                    />
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={() => printOperandList(schaltschrank, placed)}
+                className="w-full mt-2 py-1.5 text-xs rounded font-semibold"
+                style={{ background: '#1d4ed8', color: '#dbeafe' }}
+              >
+                🖨 Operandenliste drucken
+              </button>
+            </div>
+          )}
+
           {/* Description */}
           <div className="border border-slate-800 rounded p-2">
             <div className="text-xs text-slate-400 mb-1 font-semibold">Info</div>
@@ -295,6 +325,14 @@ export default function PropertiesPanel({ simState }: Props) {
                   <option value="conduit">Kabelschlauch / Wellrohr</option>
                   <option value="terminal">Reihenklemme (Durchgang)</option>
                 </select>
+                <label className="flex items-center gap-2 mt-1 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={!!selectedWire.crossingRotated}
+                    onChange={e => updateWire(selectedWireId, { crossingRotated: e.target.checked })}
+                  />
+                  <span className="text-xs text-slate-400">Verbinder drehen (Seiteneinführung)</span>
+                </label>
                 <span className="text-xs text-slate-600">Übergabe zwischen Fronttür und Innenausbau</span>
               </label>
             )

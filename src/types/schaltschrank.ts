@@ -19,6 +19,8 @@ export interface PlacedComponent {
     timerSeconds?: number
     // Reihenklemme: farbliche Zuordnung zur Spannungsebene
     terminalLevel?: 'PE' | 'N' | 'L' | '24VDC' | '0V' | 'none'
+    // SPS: symbolische Namen der Ein-/Ausgänge (Operanden), key = connectionId
+    ioNames?: Record<string, string>
   }
 }
 
@@ -56,6 +58,7 @@ export interface Wire {
   label?: string
   waypoints: Array<{ x: number; y: number }>
   crossing?: CrossingSystem  // Durchführung bei flächenübergreifenden Leitungen
+  crossingRotated?: boolean  // Durchführungs-Symbol um 90° gedreht (Seiteneinführung)
 }
 
 export interface DINRail {
@@ -64,6 +67,7 @@ export interface DINRail {
   lengthTE: number
   yPosition: number
   placedComponents: PlacedComponent[]
+  railType?: 'din' | 'sps'  // Hutschiene (Default) oder SPS-Profilschiene
 }
 
 export interface Schaltschrank {

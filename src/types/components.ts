@@ -20,6 +20,7 @@ export type ComponentCategory =
   | 'command'
   | 'accessory'
   | 'network'
+  | 'logic'
 
 export type TripCurve = 'B' | 'C' | 'D' | 'gG' | 'thermal-magnetic'
 
@@ -56,6 +57,7 @@ export interface ElectricalModel {
     | 'impulse-relay'
     | 'safety-relay'
     | 'network'
+    | 'plc'
   nominalCurrentDefault: number
   nominalCurrentOptions?: number[]
   breakingCapacity?: number  // kA
@@ -64,6 +66,7 @@ export interface ElectricalModel {
   internalResistance?: number  // Ω
   poleCount: number
   timerModeDefault?: 'on-delay' | 'off-delay'
+  mountsOn?: Array<'din' | 'sps'>  // zulässige Schienentypen (Default: nur DIN-Hutschiene)
 }
 
 export interface ComponentDefinition {

@@ -917,6 +917,66 @@ export const COMPONENT_DEFINITIONS: ComponentDefinition[] = [
     electricalModel: { type: 'network', nominalCurrentDefault: 0, internalResistance: 1e9, poleCount: 0 },
     description: 'Patchfeld mit 12 RJ45-Buchsen (Keystone) zur strukturierten Verkabelung. Rangiert Feldleitungen auf Patchkabel. In 19"-Technik oder als Hutschienenvariante.',
   },
+
+  // ─── Logik / SPS ──────────────────────────────────────────────────────
+  ...(() => {
+    // I/O-Reihen gleichmäßig über die Baubreite verteilen
+    const ioRow = (labels: string[], teWidth: number, side: 0 | 1): import('@/types/components').ConnectionPoint[] =>
+      labels.map((label, i) => ({
+        id: label,
+        label,
+        type: (side === 0 ? 'input' : 'output') as 'input' | 'output',
+        relativeX: ((i + 0.5) * teWidth) / labels.length,
+        relativeY: side,
+      }))
+    const byte = (prefix: string, byteNr: number, bits: number) =>
+      Array.from({ length: bits }, (_, b) => `${prefix}${byteNr}.${b}`)
+
+    return [
+      {
+        id: 'logo8',
+        name: 'Siemens LOGO! 8',
+        shortName: 'LOGO!',
+        category: 'logic' as const,
+        teWidth: 4,
+        color: '#0d9488',
+        connections: [
+          ...ioRow(['I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7', 'I8'], 4, 0),
+          ...ioRow(['Q1', 'Q2', 'Q3', 'Q4'], 4, 1),
+        ],
+        electricalModel: { type: 'plc' as const, nominalCurrentDefault: 0.5, internalResistance: 100, poleCount: 0, mountsOn: ['din', 'sps'] as Array<'din' | 'sps'> },
+        description: 'LOGO! 8 Logikmodul: 8 Digitaleingänge (I1–I8), 4 Relaisausgänge (Q1–Q4), integriertes Display. Für kleine Steuerungsaufgaben. Montage auf Hutschiene ODER SPS-Profilschiene möglich.',
+      },
+      {
+        id: 's7-1200',
+        name: 'SIMATIC S7-1200 (CPU 1214C)',
+        shortName: 'S7-1200',
+        category: 'logic' as const,
+        teWidth: 8,
+        color: '#0f766e',
+        connections: [
+          ...ioRow([...byte('I', 0, 8), ...byte('I', 1, 6)], 8, 0),
+          ...ioRow([...byte('Q', 0, 8), ...byte('Q', 1, 2)], 8, 1),
+        ],
+        electricalModel: { type: 'plc' as const, nominalCurrentDefault: 1, internalResistance: 50, poleCount: 0, mountsOn: ['sps'] as Array<'din' | 'sps'> },
+        description: 'SIMATIC S7-1200 Kompakt-CPU 1214C: 14 Digitaleingänge (I0.0–I1.5), 10 Digitalausgänge (Q0.0–Q1.1). Programmierung mit TIA Portal. Montage nur auf SPS-Profilschiene.',
+      },
+      {
+        id: 's7-1500',
+        name: 'SIMATIC S7-1500 (CPU + DI/DQ-Module)',
+        shortName: 'S7-1500',
+        category: 'logic' as const,
+        teWidth: 12,
+        color: '#115e59',
+        connections: [
+          ...ioRow([...byte('I', 0, 8), ...byte('I', 1, 8)], 12, 0),
+          ...ioRow([...byte('Q', 0, 8), ...byte('Q', 1, 8)], 12, 1),
+        ],
+        electricalModel: { type: 'plc' as const, nominalCurrentDefault: 2, internalResistance: 30, poleCount: 0, mountsOn: ['sps'] as Array<'din' | 'sps'> },
+        description: 'SIMATIC S7-1500 Station: CPU mit Digitalein-/-ausgabemodulen, 16 DI (I0.0–I1.7) und 16 DQ (Q0.0–Q1.7). Display an der CPU. Montage nur auf SPS-Profilschiene.',
+      },
+    ]
+  })(),
 ]
 
 export const COMPONENT_MAP = new Map<string, ComponentDefinition>(
@@ -931,5 +991,6 @@ export const CATEGORIES: Array<{ id: string; label: string; order: number }> = [
   { id: 'fuse',       label: 'Sicherungen',  order: 5 },
   { id: 'power',      label: 'Stromversorgung', order: 6 },
   { id: 'accessory',  label: 'Mess-/Zubehör', order: 7 },
-  { id: 'network',    label: 'Netzwerk', order: 8 },
+  { id: 'logic',      label: 'Logik / SPS', order: 8 },
+  { id: 'network',    label: 'Netzwerk', order: 9 },
 ]

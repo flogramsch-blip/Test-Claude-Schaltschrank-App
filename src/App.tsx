@@ -89,7 +89,7 @@ export default function App() {
       railId: t.railId,
       tePosition: t.tePosition,
       teWidth: def.teWidth,
-      valid: placementValidity(rails, t.railId, t.tePosition, def.teWidth),
+      valid: placementValidity(rails, t.railId, t.tePosition, def),
     })
   }
 

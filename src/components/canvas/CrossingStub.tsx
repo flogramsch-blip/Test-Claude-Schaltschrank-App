@@ -9,6 +9,7 @@ interface Props {
   up: boolean          // Klemme oben (Leitung geht nach oben) oder unten
   label: string        // Kennzeichen der Gegenseite
   crossing: CrossingSystem
+  rotated?: boolean    // Symbol 90° gedreht (Seiteneinführung)
 }
 
 export const CROSSING_LABELS: Record<CrossingSystem, string> = {
@@ -21,7 +22,7 @@ export const CROSSING_LABELS: Record<CrossingSystem, string> = {
  * Symbol an der Übergabestelle einer flächenübergreifenden Leitung
  * (Gehäusewand-Durchführung). Wählbar: Harting, Kabelschlauch, Klemme.
  */
-export default function CrossingStub({ wireId, x, y, up, label, crossing }: Props) {
+export default function CrossingStub({ wireId, x, y, up, label, crossing, rotated }: Props) {
   const selectWire = useUIStore(s => s.selectWire)
   const mode = useUIStore(s => s.mode)
   const removeWire = useSchaltschrankStore(s => s.removeWire)
@@ -45,7 +46,7 @@ export default function CrossingStub({ wireId, x, y, up, label, crossing }: Prop
       {/* fette unsichtbare Trefferfläche */}
       <rect x={x - 12} y={sy - 10} width={24} height={20} fill="transparent" />
 
-      <g transform={`translate(${x}, ${sy})`}>
+      <g transform={`translate(${x}, ${sy})${rotated ? ' rotate(90)' : ''}`}>
         {crossing === 'harting' && (
           <g>
             {/* Harting-Gehäuse (Rechteck-Steckverbinder mit Bügeln + Pins) */}

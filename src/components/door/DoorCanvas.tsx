@@ -93,7 +93,7 @@ export default function DoorCanvas() {
             const otherLabel = other ? (other.component.settings.label || (COMPONENT_MAP.get(other.component.definitionId)?.shortName ?? '?')) : '?'
             return (
               <CrossingStub key={w.id} wireId={w.id} x={pos.x} y={pos.y} up={cp.relativeY === 0}
-                label={otherLabel} crossing={w.crossing ?? defaultCrossing} />
+                label={otherLabel} crossing={w.crossing ?? defaultCrossing} rotated={w.crossingRotated} />
             )
           })}
 

@@ -16,6 +16,7 @@ import ButtonRenderer from './renderers/ButtonRenderer'
 import LampRenderer from './renderers/LampRenderer'
 import ScrewFuseRenderer from './renderers/ScrewFuseRenderer'
 import NetworkRenderer from './renderers/NetworkRenderer'
+import PlcRenderer from './renderers/PlcRenderer'
 import CableGlandRenderer from './renderers/CableGlandRenderer'
 import GenericRenderer from './renderers/GenericRenderer'
 
@@ -77,7 +78,7 @@ export default function PlacedComponentRenderer({ placed, rail, simState, contro
     const tePosition = Math.max(0, Math.round((loc.x - RAIL_X_OFFSET) / TE_WIDTH_PX))
     const targetRail =
       rails.find(r => loc.y >= r.yPosition && loc.y <= r.yPosition + ROW_TOTAL_HEIGHT_PX) ?? rail
-    const valid = placementValidity(rails, targetRail.id, tePosition, def!.teWidth, placed.instanceId)
+    const valid = placementValidity(rails, targetRail.id, tePosition, def!, placed.instanceId)
     return { railId: targetRail.id, tePosition, valid }
   }
 
@@ -173,6 +174,8 @@ export default function PlacedComponentRenderer({ placed, rail, simState, contro
         return <LampRenderer def={def!} placed={placed} energized={controlOverride?.energized ?? simState?.energized} />
       case 'network':
         return <NetworkRenderer def={def!} />
+      case 'plc':
+        return <PlcRenderer def={def!} placed={placed} />
       case 'fuse':
         // Schraubsicherungen (DIAZED/NEOZED) mit eigenem Renderer, NH bleibt generisch
         return def!.id.startsWith('diazed') || def!.id.startsWith('neozed')

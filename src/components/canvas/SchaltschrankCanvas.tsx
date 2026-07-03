@@ -146,7 +146,7 @@ export default function SchaltschrankCanvas({ simState }: Props) {
                 const pLabel = panel ? (panel.settings.label || (COMPONENT_MAP.get(panel.definitionId)?.shortName ?? 'Tür')) : 'Tür'
                 return (
                   <CrossingStub key={w.id} wireId={w.id} x={pos.x} y={pos.y} up={cp.relativeY === 0}
-                    label={pLabel} crossing={w.crossing ?? defaultCrossing} />
+                    label={pLabel} crossing={w.crossing ?? defaultCrossing} rotated={w.crossingRotated} />
                 )
               })
             })()}

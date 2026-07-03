@@ -53,7 +53,7 @@ export default function DINRailRow({ rail, simState, controlState }: Props) {
 
         {/* Rail track */}
         <g transform={`translate(0, ${RAIL_TOP_OFFSET_PX})`}>
-          <DINRailTrack lengthTE={rail.lengthTE} label={rail.label} />
+          <DINRailTrack lengthTE={rail.lengthTE} label={rail.label} railType={rail.railType} />
         </g>
       </g>
 

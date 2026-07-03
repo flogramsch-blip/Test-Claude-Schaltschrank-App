@@ -28,6 +28,7 @@ export default function TopBar({ simState, setSimState, trippedComponents, setTr
   const CROSSING_NAME = { harting: 'Harting', conduit: 'Kabelschlauch', terminal: 'Klemme' } as const
   const fileRef = useRef<HTMLInputElement>(null)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [railMenuOpen, setRailMenuOpen] = useState(false)
   const [bomOpen, setBomOpen] = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
 
@@ -195,14 +196,38 @@ export default function TopBar({ simState, setSimState, trippedComponents, setTr
 
       <div className="w-px h-5 bg-slate-700" />
 
-      {/* Add rail */}
-      <button
-        onClick={() => addRail(36)}
-        className="text-xs px-2.5 py-1 rounded font-medium transition-colors"
-        style={{ background: '#1e293b', color: '#64748b', border: '1px solid #334155' }}
-      >
-        + Hutschiene
-      </button>
+      {/* Add rail (Typ wählbar) */}
+      <div className="relative">
+        <button
+          onClick={() => setRailMenuOpen(o => !o)}
+          className="text-xs px-2.5 py-1 rounded font-medium transition-colors"
+          style={{ background: '#1e293b', color: '#64748b', border: '1px solid #334155' }}
+        >
+          + Schiene ▾
+        </button>
+        {railMenuOpen && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setRailMenuOpen(false)} />
+            <div
+              className="absolute left-0 mt-1 z-50 rounded shadow-2xl py-1 flex flex-col"
+              style={{ background: '#1e293b', border: '1px solid #334155', width: 190 }}
+            >
+              <button
+                onClick={() => { addRail(36, 'din'); setRailMenuOpen(false) }}
+                className="text-left text-xs px-3 py-1.5 text-slate-300 hover:bg-slate-700"
+              >
+                ⚙ Hutschiene (DIN, TS35)
+              </button>
+              <button
+                onClick={() => { addRail(36, 'sps'); setRailMenuOpen(false) }}
+                className="text-left text-xs px-3 py-1.5 text-slate-300 hover:bg-slate-700"
+              >
+                🖥 SPS-Profilschiene
+              </button>
+            </div>
+          </>
+        )}
+      </div>
 
       {/* Übergabefeld */}
       <button

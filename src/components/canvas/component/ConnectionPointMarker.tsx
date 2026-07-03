@@ -28,6 +28,7 @@ export default function ConnectionPointMarker({ cp, instanceId, absoluteX, absol
          (w.toInstanceId === instanceId && w.toConnectionId === cp.id)
   ).length
 
+  // Doppelbelegung: 2 Leitungen je Klemme zulässig (Doppeladerendhülse), 3. wird blockiert
   const isFull = connectedWiresCount >= 2
   const isDrawingFrom = wireDrawing.active && wireDrawing.fromInstanceId === instanceId && wireDrawing.fromConnectionId === cp.id
   const canConnect = mode === 'wire' || wireDrawing.active
@@ -35,6 +36,7 @@ export default function ConnectionPointMarker({ cp, instanceId, absoluteX, absol
   function getFill() {
     if (isDrawingFrom) return '#f59e0b'
     if (hovered && canConnect) return isFull ? '#ef4444' : '#22c55e'
+    if (connectedWiresCount >= 2) return '#f59e0b'  // voll belegt (Doppeladerendhülse)
     if (connectedWiresCount > 0) return '#3b82f6'
     return '#94a3b8'
   }
@@ -49,6 +51,8 @@ export default function ConnectionPointMarker({ cp, instanceId, absoluteX, absol
         cancelWireDrawing()
         return
       }
+      // Klemme bereits mit 2 Leitungen belegt → dritte nicht zulässig
+      if (isFull) return
       // Flächenübergreifend? → Durchführung (Harting/Kabelschlauch/Klemme) zuweisen
       const isPanel = (id: string) => (panelComponents ?? []).some(p => p.instanceId === id)
       const crossSurface = isPanel(wireDrawing.fromInstanceId!) !== isPanel(instanceId)
@@ -82,7 +86,7 @@ export default function ConnectionPointMarker({ cp, instanceId, absoluteX, absol
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <title>{cp.label} ({cp.type})</title>
+      <title>{cp.label} – {connectedWiresCount} Leitung(en){connectedWiresCount >= 2 ? ' (Doppeladerendhülse, voll belegt)' : ''}</title>
     </circle>
   )
 }
