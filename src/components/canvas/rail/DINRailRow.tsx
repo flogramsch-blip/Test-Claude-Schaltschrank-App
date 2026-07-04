@@ -12,6 +12,15 @@ interface Props {
   controlState?: ControlState | null
 }
 
+/** Aktive Ein-/Ausgangs-connectionIds einer SPS (für LED-Anzeige). */
+function plcActiveIO(cs: ControlState, plcId: string): Set<string> | undefined {
+  const prefix = `${plcId}::`
+  const out = new Set<string>()
+  for (const k of cs.plcInputs) if (k.startsWith(prefix)) out.add(k.slice(prefix.length))
+  for (const k of cs.plcOutputs) if (k.startsWith(prefix)) out.add(k.slice(prefix.length))
+  return out.size ? out : undefined
+}
+
 export default function DINRailRow({ rail, simState, controlState }: Props) {
   const { setNodeRef, isOver } = useDroppable({
     id: `rail-${rail.id}`,
@@ -69,6 +78,7 @@ export default function DINRailRow({ rail, simState, controlState }: Props) {
           controlOverride={controlState ? {
             closed: controlState.closedContactors.has(placed.instanceId),
             energized: controlState.litLamps.has(placed.instanceId) || controlState.energizedCoils.has(placed.instanceId),
+            plcIO: plcActiveIO(controlState, placed.instanceId),
           } : undefined}
         />
       ))}

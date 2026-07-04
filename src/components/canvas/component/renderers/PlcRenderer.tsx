@@ -4,10 +4,11 @@ import { TE_WIDTH_PX, RAIL_HEIGHT_PX } from '@/utils/teGrid'
 interface Props {
   def: ComponentDefinition
   placed: PC
+  activeIO?: Set<string>   // connectionIds mit Signal (Eingang energisiert / Ausgang aktiv)
 }
 
 /** SPS / Logikmodul (LOGO!, S7-1200, S7-1500) im Siemens-Look */
-export default function PlcRenderer({ def }: Props) {
+export default function PlcRenderer({ def, activeIO }: Props) {
   const w = def.teWidth * TE_WIDTH_PX
   const h = RAIL_HEIGHT_PX
   const isLogo = def.id === 'logo8'
@@ -28,6 +29,14 @@ export default function PlcRenderer({ def }: Props) {
       ))}
       {outputs.map(cp => (
         <rect key={cp.id} x={cp.relativeX * TE_WIDTH_PX - 1.2} y={h - 7} width={2.4} height={4} fill="#94a3b8" />
+      ))}
+
+      {/* Aktive Ein-/Ausgänge während der Simulation (grüne Status-LED) */}
+      {activeIO && inputs.filter(cp => activeIO.has(cp.id)).map(cp => (
+        <circle key={'li' + cp.id} cx={cp.relativeX * TE_WIDTH_PX} cy={5} r={1.8} fill="#22c55e" stroke="#bbf7d0" strokeWidth={0.4} />
+      ))}
+      {activeIO && outputs.filter(cp => activeIO.has(cp.id)).map(cp => (
+        <circle key={'lo' + cp.id} cx={cp.relativeX * TE_WIDTH_PX} cy={h - 5} r={1.8} fill="#22c55e" stroke="#bbf7d0" strokeWidth={0.4} />
       ))}
 
       {/* Markenband */}

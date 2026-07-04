@@ -21,8 +21,21 @@ export interface PlacedComponent {
     terminalLevel?: 'PE' | 'N' | 'L' | '24VDC' | '0V' | 'none'
     // SPS: symbolische Namen der Ein-/Ausgänge (Operanden), key = connectionId
     ioNames?: Record<string, string>
+    // SPS: Verknüpfungslogik je Ausgang. key = Ausgangs-connectionId (z. B. Q1 / Q0.0)
+    // Wert = ODER-verknüpfte Zeilen (Rungs); jede Zeile = UND-verknüpfte Terme.
+    // term.ref verweist auf eine Ein-/Ausgangs-connectionId derselben SPS
+    // (Ausgänge erlauben Selbsthaltung). negated = Öffner-Kontakt (NICHT).
+    plcLogic?: Record<string, PlcRung[]>
   }
 }
+
+/** Ein Term in der SPS-Verknüpfung: Verweis auf einen Operanden (I/Q) der SPS. */
+export interface PlcTerm {
+  ref: string       // connectionId eines Ein-/Ausgangs derselben SPS
+  negated: boolean  // true = Öffner (NICHT-Kontakt)
+}
+/** Eine UND-verknüpfte Kontaktreihe (Strompfad). Mehrere Zeilen = ODER. */
+export type PlcRung = PlcTerm[]
 
 /** Frei platziertes HMI-Gerät auf der Fronttür/Frontplatte */
 export interface PanelComponent {

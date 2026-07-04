@@ -24,7 +24,7 @@ interface Props {
   placed: PlacedComponent
   rail: DINRail
   simState?: ComponentSimState
-  controlOverride?: { closed?: boolean; energized?: boolean }
+  controlOverride?: { closed?: boolean; energized?: boolean; plcIO?: Set<string> }
 }
 
 export default function PlacedComponentRenderer({ placed, rail, simState, controlOverride }: Props) {
@@ -175,7 +175,7 @@ export default function PlacedComponentRenderer({ placed, rail, simState, contro
       case 'network':
         return <NetworkRenderer def={def!} />
       case 'plc':
-        return <PlcRenderer def={def!} placed={placed} />
+        return <PlcRenderer def={def!} placed={placed} activeIO={controlOverride?.plcIO} />
       case 'fuse':
         // Schraubsicherungen (DIAZED/NEOZED) mit eigenem Renderer, NH bleibt generisch
         return def!.id.startsWith('diazed') || def!.id.startsWith('neozed')

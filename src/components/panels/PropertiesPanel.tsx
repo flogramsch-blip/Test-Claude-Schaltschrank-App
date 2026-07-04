@@ -6,6 +6,7 @@ import { WIRE_COLORS } from '@/utils/teGrid'
 import { WIRE_COLOR_OPTIONS } from '../canvas/wiring/WireColorPicker'
 import type { WireColor } from '@/types/components'
 import InterfacePanelConfig from './InterfacePanelConfig'
+import PlcLogicEditor from './PlcLogicEditor'
 import { printOperandList } from '@/utils/operandList'
 
 interface Props {
@@ -233,6 +234,15 @@ export default function PropertiesPanel({ simState }: Props) {
                 🖨 Operandenliste drucken
               </button>
             </div>
+          )}
+
+          {/* SPS: Verknüpfungslogik (Ladder/FUP) */}
+          {def.electricalModel.type === 'plc' && (
+            <PlcLogicEditor
+              def={def}
+              placed={placed}
+              onChange={plcLogic => updateComponentSettings(placed.instanceId, { plcLogic })}
+            />
           )}
 
           {/* Description */}

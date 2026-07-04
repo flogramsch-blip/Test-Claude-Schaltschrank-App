@@ -7,6 +7,7 @@ import SimulationPanel from '../simulation/SimulationPanel'
 import BomDialog from '../dialogs/BomDialog'
 import ShortcutsDialog from '../dialogs/ShortcutsDialog'
 import { exportPNG, exportSVG, contentSize } from '@/utils/exportImage'
+import { printProjectDoc } from '@/utils/projectDoc'
 
 interface Props {
   simState: SimulationState | null
@@ -292,6 +293,7 @@ export default function TopBar({ simState, setSimState, trippedComponents, setTr
               >
                 {[
                   { label: '📋 Stückliste (BOM)', fn: () => setBomOpen(true) },
+                  { label: '📄 Projektdokumentation (PDF)', fn: () => printProjectDoc(schaltschrank, prompt('Name (für das Deckblatt, optional):') ?? '') },
                   { label: '🖼 Als PNG exportieren', fn: () => exportPNG(schaltschrank) },
                   { label: '🖼 Als SVG exportieren', fn: () => exportSVG(schaltschrank) },
                   { label: lightCanvas ? '🌙 Dunkler Hintergrund' : '☀ Heller Hintergrund', fn: toggleLightCanvas },

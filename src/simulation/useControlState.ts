@@ -16,10 +16,12 @@ export function useControlState(schaltschrank: Schaltschrank): ControlState | nu
   const pressedButtons = useUIStore(s => s.pressedButtons)
   const [now, setNow] = useState(() => Date.now())
   const timers = useRef<Map<string, TimerState>>(new Map())
+  const prevOutputs = useRef<Set<string>>(new Set())  // gehaltene SPS-Ausgänge (Selbsthaltung)
 
   useEffect(() => {
     if (!simulationRunning) {
       timers.current.clear()
+      prevOutputs.current = new Set()
       return
     }
     setNow(Date.now())
@@ -84,5 +86,7 @@ export function useControlState(schaltschrank: Schaltschrank): ControlState | nu
     return inputActive
   }
 
-  return computeControlState(schaltschrank, pressedButtons, resolveOutput)
+  const state = computeControlState(schaltschrank, pressedButtons, resolveOutput, prevOutputs.current)
+  prevOutputs.current = state.plcOutputs
+  return state
 }
