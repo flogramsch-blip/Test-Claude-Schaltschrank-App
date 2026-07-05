@@ -12,6 +12,7 @@ interface WireDrawingState {
   currentX: number
   currentY: number
   pendingColor: WireColor
+  waypoints: Array<{ x: number; y: number }>  // manuell gesetzte Zwischenstops (Ecken)
 }
 
 interface UIStore {
@@ -36,6 +37,8 @@ interface UIStore {
   surface: 'interior' | 'door'
   defaultCrossing: 'harting' | 'conduit' | 'terminal'
   tutorialOpen: boolean
+  voltagePromptWireId: string | null   // nach Verbinden: Spannungsabfrage offen
+  lastVoltage: string                  // zuletzt gewählte Spannung (Vorauswahl)
 
   setMode: (mode: EditorMode) => void
   selectComponent: (instanceId: string | null) => void
@@ -44,8 +47,12 @@ interface UIStore {
   setPan: (x: number, y: number) => void
   startWireDrawing: (fromInstanceId: string, fromConnectionId: string, fromX: number, fromY: number) => void
   updateWireDrawingMouse: (x: number, y: number) => void
+  addWireWaypoint: (x: number, y: number) => void
   cancelWireDrawing: () => void
   setPendingWireColor: (color: WireColor) => void
+  openVoltagePrompt: (wireId: string) => void
+  closeVoltagePrompt: () => void
+  setLastVoltage: (voltage: string) => void
   setSimulationRunning: (running: boolean) => void
   setFaultWire: (wireId: string | null) => void
   toggleButton: (instanceId: string) => void
@@ -86,6 +93,7 @@ export const useUIStore = create<UIStore>((set) => ({
     currentX: 0,
     currentY: 0,
     pendingColor: 'black',
+    waypoints: [],
   },
   simulationRunning: false,
   faultWireId: null,
@@ -101,6 +109,8 @@ export const useUIStore = create<UIStore>((set) => ({
   surface: 'interior',
   defaultCrossing: 'harting',
   tutorialOpen: !tutorialSeen(),
+  voltagePromptWireId: null,
+  lastVoltage: '',
 
   setMode: (mode) => set({ mode, selectedInstanceId: null, selectedWireId: null }),
   selectComponent: (instanceId) => set({ selectedInstanceId: instanceId, selectedWireId: null }),
@@ -119,6 +129,7 @@ export const useUIStore = create<UIStore>((set) => ({
         fromY,
         currentX: fromX,
         currentY: fromY,
+        waypoints: [],
       },
     })),
 
@@ -127,13 +138,22 @@ export const useUIStore = create<UIStore>((set) => ({
       wireDrawing: { ...s.wireDrawing, currentX: x, currentY: y },
     })),
 
+  addWireWaypoint: (x, y) =>
+    set(s => (s.wireDrawing.active
+      ? { wireDrawing: { ...s.wireDrawing, waypoints: [...s.wireDrawing.waypoints, { x, y }] } }
+      : s)),
+
   cancelWireDrawing: () =>
     set(s => ({
-      wireDrawing: { ...s.wireDrawing, active: false, fromInstanceId: null, fromConnectionId: null },
+      wireDrawing: { ...s.wireDrawing, active: false, fromInstanceId: null, fromConnectionId: null, waypoints: [] },
     })),
 
   setPendingWireColor: (color) =>
     set(s => ({ wireDrawing: { ...s.wireDrawing, pendingColor: color } })),
+
+  openVoltagePrompt: (wireId) => set({ voltagePromptWireId: wireId }),
+  closeVoltagePrompt: () => set({ voltagePromptWireId: null }),
+  setLastVoltage: (voltage) => set({ lastVoltage: voltage }),
 
   setSimulationRunning: (running) => set({ simulationRunning: running }),
   setFaultWire: (wireId) => set({ faultWireId: wireId }),

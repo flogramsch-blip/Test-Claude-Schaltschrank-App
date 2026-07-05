@@ -8,6 +8,7 @@ import type { WireColor } from '@/types/components'
 import InterfacePanelConfig from './InterfacePanelConfig'
 import PlcLogicEditor from './PlcLogicEditor'
 import { printOperandList } from '@/utils/operandList'
+import { VOLTAGE_LEVELS, voltageColor } from '@/utils/voltageLevels'
 
 interface Props {
   simState: { componentStates: Map<string, ComponentSimState> } | null
@@ -316,6 +317,33 @@ export default function PropertiesPanel({ simState }: Props) {
               className="bg-slate-800 text-slate-100 text-sm px-2 py-1.5 rounded border border-slate-700 outline-none focus:border-blue-500"
               placeholder="z.B. L1, N, PE, 24V+"
             />
+          </label>
+
+          {/* Spannungsebene */}
+          <label className="flex flex-col gap-1">
+            <span className="text-xs text-slate-400">Spannungsebene</span>
+            <div className="flex items-center gap-2">
+              <span className="inline-block rounded-full shrink-0" style={{ width: 14, height: 14, background: voltageColor(selectedWire.voltage) ?? '#334155', border: '1px solid #475569' }} />
+              <select
+                value={VOLTAGE_LEVELS.some(v => v.id === selectedWire.voltage) ? selectedWire.voltage : (selectedWire.voltage ? '__custom' : '')}
+                onChange={e => { if (e.target.value !== '__custom') updateWire(selectedWireId, { voltage: e.target.value || undefined }) }}
+                className="flex-1 min-w-0 bg-slate-800 text-slate-100 text-sm px-2 py-1.5 rounded border border-slate-700"
+              >
+                <option value="">— keine Angabe —</option>
+                {VOLTAGE_LEVELS.map(v => <option key={v.id} value={v.id}>{v.label}</option>)}
+                {selectedWire.voltage && !VOLTAGE_LEVELS.some(v => v.id === selectedWire.voltage) && (
+                  <option value="__custom">{selectedWire.voltage} (eigen)</option>
+                )}
+              </select>
+            </div>
+            <input
+              type="text"
+              value={selectedWire.voltage ?? ''}
+              onChange={e => updateWire(selectedWireId, { voltage: e.target.value || undefined })}
+              className="bg-slate-800 text-slate-100 text-xs px-2 py-1 rounded border border-slate-700 outline-none focus:border-blue-500"
+              placeholder="oder eigene Angabe, z.B. 48 V DC"
+            />
+            <span className="text-xs text-slate-600">Färbt die Leitung in der Simulation.</span>
           </label>
 
           {/* Durchführung (nur bei flächenübergreifenden Leitungen) */}

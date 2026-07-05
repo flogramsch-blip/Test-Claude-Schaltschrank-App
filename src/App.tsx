@@ -19,6 +19,7 @@ import StatusBar from '@/components/layout/StatusBar'
 import ValidationPanel from '@/components/panels/ValidationPanel'
 import TutorialOverlay from '@/components/onboarding/TutorialOverlay'
 import ControlPanelDialog from '@/components/simulation/ControlPanelDialog'
+import VoltagePromptModal from '@/components/panels/VoltagePromptModal'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useSchaltschrankStore } from '@/store/schaltschrankStore'
 import { useUIStore } from '@/store/uiStore'
@@ -156,6 +157,9 @@ export default function App() {
 
       {/* Externe Steuereinheit / Bedienfeld */}
       <ControlPanelDialog />
+
+      {/* Spannungsabfrage nach dem Verbinden */}
+      <VoltagePromptModal />
 
       {/* Tutorial / Onboarding */}
       <TutorialOverlay />

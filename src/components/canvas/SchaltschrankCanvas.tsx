@@ -21,7 +21,7 @@ interface Props {
 export default function SchaltschrankCanvas({ simState }: Props) {
   const svgRef = useRef<SVGSVGElement>(null)
   const { schaltschrank } = useSchaltschrankStore()
-  const { zoom, panX, panY, setZoom, setPan, updateWireDrawingMouse, cancelWireDrawing, wireDrawing, mode, selectComponent, selectWire, faultWireId, lightCanvas, defaultCrossing } = useUIStore()
+  const { zoom, panX, panY, setZoom, setPan, updateWireDrawingMouse, addWireWaypoint, cancelWireDrawing, wireDrawing, mode, selectComponent, selectWire, faultWireId, lightCanvas, defaultCrossing } = useUIStore()
 
   const controlState = useControlState(schaltschrank)
 
@@ -40,9 +40,14 @@ export default function SchaltschrankCanvas({ simState }: Props) {
     updateWireDrawingMouse(svgX, svgY)
   }
 
-  function handleCanvasClick() {
+  function handleCanvasClick(e: React.MouseEvent) {
     if (wireDrawing.active) {
-      cancelWireDrawing()
+      // Linksklick in freie Fläche → Zwischenstop (Ecke) setzen; Verdrahtung läuft weiter
+      const rect = svgRef.current?.getBoundingClientRect()
+      if (rect) {
+        addWireWaypoint((e.clientX - rect.left - panX) / zoom, (e.clientY - rect.top - panY) / zoom)
+      }
+      return
     }
     selectComponent(null)
     selectWire(null)
@@ -73,7 +78,7 @@ export default function SchaltschrankCanvas({ simState }: Props) {
       <div
         className="relative flex-1 overflow-hidden"
         style={{ background: lightCanvas ? '#e2e8f0' : 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}
-        onContextMenu={e => e.preventDefault()}
+        onContextMenu={e => { e.preventDefault(); if (wireDrawing.active) cancelWireDrawing() }}
       >
         <svg
           ref={svgRef}

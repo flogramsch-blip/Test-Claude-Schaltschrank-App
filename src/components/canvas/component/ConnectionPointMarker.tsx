@@ -17,6 +17,7 @@ export default function ConnectionPointMarker({ cp, instanceId, absoluteX, absol
   const wireDrawing = useUIStore(s => s.wireDrawing)
   const startWireDrawing = useUIStore(s => s.startWireDrawing)
   const cancelWireDrawing = useUIStore(s => s.cancelWireDrawing)
+  const openVoltagePrompt = useUIStore(s => s.openVoltagePrompt)
   const pendingColor = useUIStore(s => s.wireDrawing.pendingColor)
   const defaultCrossing = useUIStore(s => s.defaultCrossing)
   const addWire = useSchaltschrankStore(s => s.addWire)
@@ -56,16 +57,21 @@ export default function ConnectionPointMarker({ cp, instanceId, absoluteX, absol
       // Flächenübergreifend? → Durchführung (Harting/Kabelschlauch/Klemme) zuweisen
       const isPanel = (id: string) => (panelComponents ?? []).some(p => p.instanceId === id)
       const crossSurface = isPanel(wireDrawing.fromInstanceId!) !== isPanel(instanceId)
-      addWire({
+      const waypoints = wireDrawing.waypoints
+      const id = addWire({
         fromInstanceId: wireDrawing.fromInstanceId!,
         fromConnectionId: wireDrawing.fromConnectionId!,
         toInstanceId: instanceId,
         toConnectionId: cp.id,
         color: pendingColor as WireColor,
         crossSection: 1.5,
+        waypoints,
+        ...(waypoints.length ? { manualRoute: true } : {}),
         ...(crossSurface ? { crossing: defaultCrossing } : {}),
       })
       cancelWireDrawing()
+      // Nach dem Verbinden: Spannungsebene abfragen
+      openVoltagePrompt(id)
     } else {
       startWireDrawing(instanceId, cp.id, absoluteX, absoluteY)
     }

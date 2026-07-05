@@ -5,6 +5,7 @@ import type { Wire } from '@/types/schaltschrank'
 import type { DINRail } from '@/types/schaltschrank'
 import { COMPONENT_MAP } from '@/data/componentDefinitions'
 import { resolveWireEndpoint } from '@/utils/surfaceGeometry'
+import { voltageColor, voltageShort, voltageLabel } from '@/utils/voltageLevels'
 import { useUIStore } from '@/store/uiStore'
 import { useSchaltschrankStore } from '@/store/schaltschrankStore'
 
@@ -34,6 +35,7 @@ export default function WireRenderer({ wire, rails, index, isSimRunning, isFault
   const isSelected = selectedWireId === wire.id
 
   const dragRef = useRef<{ startX: number; startY: number; moved: boolean } | null>(null)
+  const wpDragRef = useRef<{ index: number } | null>(null)
   const [dragging, setDragging] = useState(false)
   const [hovered, setHovered] = useState(false)
 
@@ -50,9 +52,17 @@ export default function WireRenderer({ wire, rails, index, isSimRunning, isFault
 
   const samRail = !!fromRail && fromRail === toRail
   const wpt = wire.waypoints?.[0]
+  const manual = !!wire.manualRoute && (wire.waypoints?.length ?? 0) > 0
   let pathD: string
   let handleX: number, handleY: number
-  if (samRail) {
+  if (manual) {
+    // Manuell gesetzte Ecken: Polyline durch alle Zwischenstops
+    const pts = [fromPos, ...wire.waypoints, toPos]
+    pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
+    const mid = wire.waypoints[Math.floor((wire.waypoints.length - 1) / 2)]
+    handleX = mid.x
+    handleY = mid.y
+  } else if (samRail) {
     const channelY = wpt?.y ?? autoChannelY(fromPos.y, toPos.y, index % 4, fromRail!.yPosition)
     pathD = buildWirePath(fromPos.x, fromPos.y, toPos.x, toPos.y, index % 4, fromRail!.yPosition, channelY)
     handleX = (fromPos.x + toPos.x) / 2
@@ -68,8 +78,17 @@ export default function WireRenderer({ wire, rails, index, isSimRunning, isFault
   const nominal = fromPlaced?.settings.nominalCurrent ?? fromDef?.electricalModel.nominalCurrentDefault ?? 0
   const loadRatio = current && nominal ? current / nominal : 0
   const showLoad = isSimRunning && !isFault && current != null && current > 0.01
-  const color = showLoad ? loadColor(loadRatio) : baseColor
-  const strokeWidth = isSelected ? 3.5 : showLoad ? 3 : 2.5
+  const vColor = voltageColor(wire.voltage)
+  // Priorität in der Simulation: Fehler(rot) > Spannungsebene > Laststrom > Grundfarbe
+  const color = isFault
+    ? '#dc2626'
+    : isSimRunning && vColor
+      ? vColor
+      : showLoad
+        ? loadColor(loadRatio)
+        : baseColor
+  const strokeWidth = isSelected ? 3.5 : (showLoad || (isSimRunning && vColor)) ? 3 : 2.5
+  const showVoltageBadge = isSimRunning && hovered && !!wire.voltage
 
   function canvasCoords(el: SVGGraphicsElement, cx: number, cy: number) {
     const parent = el.parentNode as SVGGraphicsElement | null
@@ -97,6 +116,8 @@ export default function WireRenderer({ wire, rails, index, isSimRunning, isFault
   function handlePointerMove(e: React.PointerEvent) {
     const st = dragRef.current
     if (!st) return
+    // Bei manuell gerouteten Leitungen wird über die Eck-Griffe verschoben
+    if (manual) return
     if (!st.moved && Math.hypot(e.clientX - st.startX, e.clientY - st.startY) < 3) return
     if (!st.moved) setDragging(true)
     st.moved = true
@@ -109,6 +130,29 @@ export default function WireRenderer({ wire, rails, index, isSimRunning, isFault
   function handlePointerUp(e: React.PointerEvent) {
     dragRef.current = null
     setDragging(false)
+    try { (e.currentTarget as unknown as SVGGraphicsElement).releasePointerCapture?.(e.pointerId) } catch { /* ignore */ }
+  }
+
+  // Eck-Griffe manuell gerouteter Leitungen einzeln verschieben
+  function wpDown(e: React.PointerEvent, i: number) {
+    if (mode === 'delete') return
+    e.stopPropagation()
+    const el = e.currentTarget as unknown as SVGGraphicsElement
+    el.setPointerCapture?.(e.pointerId)
+    wpDragRef.current = { index: i }
+    selectWire(wire.id)
+  }
+  function wpMove(e: React.PointerEvent) {
+    const st = wpDragRef.current
+    if (!st) return
+    const loc = canvasCoords(e.currentTarget as unknown as SVGGraphicsElement, e.clientX, e.clientY)
+    if (!loc) return
+    const wps = (wire.waypoints ?? []).map(p => ({ ...p }))
+    wps[st.index] = { x: loc.x, y: loc.y }
+    updateWire(wire.id, { waypoints: wps })
+  }
+  function wpUp(e: React.PointerEvent) {
+    wpDragRef.current = null
     try { (e.currentTarget as unknown as SVGGraphicsElement).releasePointerCapture?.(e.pointerId) } catch { /* ignore */ }
   }
 
@@ -139,12 +183,28 @@ export default function WireRenderer({ wire, rails, index, isSimRunning, isFault
         }}
       />
 
-      {/* Zieh-Griff bei Auswahl ODER Hover (zeigt: verschiebbar) */}
-      {(isSelected || hovered) && mode !== 'delete' && (
+      {/* Zieh-Griff bei Auswahl ODER Hover (nur Auto-Routing) */}
+      {!manual && (isSelected || hovered) && mode !== 'delete' && (
         <circle cx={handleX} cy={handleY} r={5} fill="#f59e0b" stroke="#0f172a" strokeWidth={1} opacity={isSelected ? 1 : 0.7}>
           <title>Leitung verschieben (ziehen)</title>
         </circle>
       )}
+
+      {/* Eck-Griffe manuell gesetzter Zwischenstops (einzeln verschiebbar) */}
+      {manual && (isSelected || hovered) && mode !== 'delete' && wire.waypoints.map((p, i) => (
+        <circle
+          key={i}
+          cx={p.x} cy={p.y} r={5}
+          fill="#f59e0b" stroke="#0f172a" strokeWidth={1}
+          opacity={isSelected ? 1 : 0.7}
+          style={{ cursor: 'grab' }}
+          onPointerDown={e => wpDown(e, i)}
+          onPointerMove={wpMove}
+          onPointerUp={wpUp}
+        >
+          <title>Ecke verschieben</title>
+        </circle>
+      ))}
 
       {/* Strom-Anzeige während der Simulation */}
       {showLoad && (
@@ -162,7 +222,7 @@ export default function WireRenderer({ wire, rails, index, isSimRunning, isFault
       )}
 
       {/* Wire label */}
-      {!showLoad && wire.label && (
+      {!showLoad && !showVoltageBadge && wire.label && (
         <text
           x={(fromPos.x + toPos.x) / 2}
           y={handleY - 4}
@@ -174,6 +234,22 @@ export default function WireRenderer({ wire, rails, index, isSimRunning, isFault
           {wire.label}
         </text>
       )}
+
+      {/* Spannungs-Anzeige beim Überfahren während der Simulation */}
+      {showVoltageBadge && (
+        <g pointerEvents="none">
+          <rect
+            x={handleX - 26} y={handleY - 22} width={52} height={13} rx={3}
+            fill="#0f172a" stroke={vColor ?? '#94a3b8'} strokeWidth={1}
+          />
+          <text x={handleX} y={handleY - 13} textAnchor="middle" fontSize={7.5} fill={vColor ?? '#e5e7eb'} fontFamily="monospace" fontWeight="bold">
+            {voltageShort(wire.voltage)}
+          </text>
+        </g>
+      )}
+
+      {/* Native Tooltip mit voller Spannungsbezeichnung */}
+      {wire.voltage && <title>{voltageLabel(wire.voltage)}</title>}
     </g>
   )
 }

@@ -16,7 +16,7 @@ import InterfacePanelBlock from '@/components/canvas/InterfacePanelBlock'
 export default function DoorCanvas() {
   const svgRef = useRef<SVGSVGElement>(null)
   const schaltschrank = useSchaltschrankStore(s => s.schaltschrank)
-  const { zoom, panX, panY, setZoom, setPan, updateWireDrawingMouse, cancelWireDrawing, wireDrawing, mode, selectComponent, selectWire, lightCanvas, defaultCrossing } = useUIStore()
+  const { zoom, panX, panY, setZoom, setPan, updateWireDrawingMouse, addWireWaypoint, cancelWireDrawing, wireDrawing, mode, selectComponent, selectWire, lightCanvas, defaultCrossing } = useUIStore()
   const { setNodeRef } = useDroppable({ id: 'door-panel' })
   const panels = schaltschrank.panelComponents ?? []
   const controlState = useControlState(schaltschrank)
@@ -31,8 +31,12 @@ export default function DoorCanvas() {
     if (!rect) return
     updateWireDrawingMouse((e.clientX - rect.left - panX) / zoom, (e.clientY - rect.top - panY) / zoom)
   }
-  function handleCanvasClick() {
-    if (wireDrawing.active) cancelWireDrawing()
+  function handleCanvasClick(e: React.MouseEvent) {
+    if (wireDrawing.active) {
+      const rect = svgRef.current?.getBoundingClientRect()
+      if (rect) addWireWaypoint((e.clientX - rect.left - panX) / zoom, (e.clientY - rect.top - panY) / zoom)
+      return
+    }
     selectComponent(null); selectWire(null)
   }
   const panStart = useRef<{ x: number; y: number } | null>(null)
@@ -56,7 +60,7 @@ export default function DoorCanvas() {
       ref={setNodeRef}
       className="relative flex-1 overflow-hidden"
       style={{ background: lightCanvas ? '#cbd5e1' : 'linear-gradient(135deg,#111827 0%,#1f2937 100%)' }}
-      onContextMenu={e => e.preventDefault()}
+      onContextMenu={e => { e.preventDefault(); if (wireDrawing.active) cancelWireDrawing() }}
     >
       <svg ref={svgRef} id="door-svg" width="100%" height="100%"
         style={{ cursor: wireDrawing.active ? 'crosshair' : mode === 'delete' ? 'not-allowed' : 'default' }}

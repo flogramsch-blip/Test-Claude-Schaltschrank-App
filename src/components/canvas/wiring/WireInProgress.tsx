@@ -8,14 +8,10 @@ export default function WireInProgress() {
 
   const color = WIRE_COLORS[wireDrawing.pendingColor] ?? '#94a3b8'
 
-  const x1 = wireDrawing.fromX
-  const y1 = wireDrawing.fromY
-  const x2 = wireDrawing.currentX
-  const y2 = wireDrawing.currentY
-
-  // Simple elbow path
-  const midY = Math.min(y1, y2) - 12
-  const d = `M ${x1} ${y1} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2}`
+  const start = { x: wireDrawing.fromX, y: wireDrawing.fromY }
+  const cursor = { x: wireDrawing.currentX, y: wireDrawing.currentY }
+  const pts = [start, ...wireDrawing.waypoints, cursor]
+  const d = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
 
   return (
     <g pointerEvents="none">
@@ -25,13 +21,18 @@ export default function WireInProgress() {
         strokeWidth={2.5}
         fill="none"
         strokeLinecap="round"
+        strokeLinejoin="round"
         strokeDasharray="6 3"
-        opacity={0.8}
+        opacity={0.85}
       />
-      {/* Start dot */}
-      <circle cx={x1} cy={y1} r={3} fill={color} />
-      {/* End dot */}
-      <circle cx={x2} cy={y2} r={3} fill={color} opacity={0.5} />
+      {/* Startpunkt */}
+      <circle cx={start.x} cy={start.y} r={3} fill={color} />
+      {/* gesetzte Zwischenstops (Ecken) */}
+      {wireDrawing.waypoints.map((p, i) => (
+        <circle key={i} cx={p.x} cy={p.y} r={3.2} fill="#f59e0b" stroke="#0f172a" strokeWidth={1} />
+      ))}
+      {/* aktueller Cursor */}
+      <circle cx={cursor.x} cy={cursor.y} r={3} fill={color} opacity={0.5} />
     </g>
   )
 }

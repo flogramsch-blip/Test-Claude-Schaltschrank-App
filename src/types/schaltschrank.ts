@@ -69,7 +69,9 @@ export interface Wire {
   color: WireColor
   crossSection?: number  // mm²
   label?: string
+  voltage?: string       // anliegende Spannungsebene (z. B. "400 V AC", "24 V DC")
   waypoints: Array<{ x: number; y: number }>
+  manualRoute?: boolean  // waypoints sind manuell gesetzte Ecken (Polyline statt Auto-Kanal)
   crossing?: CrossingSystem  // Durchführung bei flächenübergreifenden Leitungen
   crossingRotated?: boolean  // Durchführungs-Symbol um 90° gedreht (Seiteneinführung)
 }

@@ -44,7 +44,7 @@ interface SchaltschrankStore {
   addRail: (lengthTE?: number, railType?: 'din' | 'sps') => void
   removeRail: (railId: string) => void
 
-  addWire: (wire: Omit<Wire, 'id' | 'waypoints'>) => void
+  addWire: (wire: Omit<Wire, 'id'>) => string
   removeWire: (wireId: string) => void
   updateWire: (wireId: string, updates: Partial<Wire>) => void
 
@@ -264,16 +264,18 @@ export const useSchaltschrankStore = create<SchaltschrankStore>((set, get) => ({
   },
 
   addWire: (wireData) => {
+    const id = uuidv4()
     set(produce((draft: SchaltschrankStore) => {
       draft.past = pushHistory(draft.past, draft.schaltschrank)
       draft.future = []
       draft.schaltschrank.wires.push({
         ...wireData,
-        id: uuidv4(),
-        waypoints: [],
+        id,
+        waypoints: wireData.waypoints ?? [],
       })
       draft.schaltschrank.modifiedAt = new Date().toISOString()
     }))
+    return id
   },
 
   removeWire: (wireId) => {
