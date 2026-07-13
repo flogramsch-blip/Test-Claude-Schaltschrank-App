@@ -21,6 +21,8 @@ export function useKeyboardShortcuts() {
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
+      // Im Zählerschrank-Planer greifen die Simulator-Shortcuts nicht
+      if (useUIStore.getState().appView !== 'simulator') return
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
 

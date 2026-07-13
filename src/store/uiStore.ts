@@ -39,8 +39,10 @@ interface UIStore {
   tutorialOpen: boolean
   voltagePromptWireId: string | null   // nach Verbinden: Spannungsabfrage offen
   lastVoltage: string                  // zuletzt gewählte Spannung (Vorauswahl)
+  appView: 'simulator' | 'zaehler'     // aktiver Bereich (Simulator ODER Zählerschrank-Planer)
 
   setMode: (mode: EditorMode) => void
+  setAppView: (view: 'simulator' | 'zaehler') => void
   selectComponent: (instanceId: string | null) => void
   selectWire: (wireId: string | null) => void
   setZoom: (zoom: number) => void
@@ -111,8 +113,10 @@ export const useUIStore = create<UIStore>((set) => ({
   tutorialOpen: !tutorialSeen(),
   voltagePromptWireId: null,
   lastVoltage: '',
+  appView: 'simulator',
 
   setMode: (mode) => set({ mode, selectedInstanceId: null, selectedWireId: null }),
+  setAppView: (appView) => set({ appView }),
   selectComponent: (instanceId) => set({ selectedInstanceId: instanceId, selectedWireId: null }),
   selectWire: (wireId) => set({ selectedWireId: wireId, selectedInstanceId: null }),
   setZoom: (zoom) => set({ zoom: Math.max(0.3, Math.min(3, zoom)) }),

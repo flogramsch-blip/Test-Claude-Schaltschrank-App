@@ -24,7 +24,7 @@ const MODES: Array<{ id: EditorMode; label: string; shortcut: string }> = [
 
 export default function TopBar({ simState, setSimState, trippedComponents, setTrippedComponents }: Props) {
   const { schaltschrank, undo, redo, past, future, exportJSON, importJSON, addRail, updateProjectName, reset, compactRail, addInterfacePanel, removeInterfacePanel } = useSchaltschrankStore()
-  const { mode, setMode, zoom, setZoom, setPan, exercisesOpen, toggleExercises, lightCanvas, toggleLightCanvas, openTutorial, showCabinetWall, toggleCabinetWall, toggleControlPanel, surface, setSurface, defaultCrossing, setDefaultCrossing } = useUIStore()
+  const { mode, setMode, zoom, setZoom, setPan, exercisesOpen, toggleExercises, lightCanvas, toggleLightCanvas, openTutorial, showCabinetWall, toggleCabinetWall, toggleControlPanel, surface, setSurface, defaultCrossing, setDefaultCrossing, setAppView } = useUIStore()
   const CROSSING_CYCLE = { harting: 'conduit', conduit: 'terminal', terminal: 'harting' } as const
   const CROSSING_NAME = { harting: 'Harting', conduit: 'Kabelschlauch', terminal: 'Klemme' } as const
   const fileRef = useRef<HTMLInputElement>(null)
@@ -137,6 +137,15 @@ export default function TopBar({ simState, setSimState, trippedComponents, setTr
         title="Externe Steuereinheit / Bedienfeld"
       >
         🎛 Bedienfeld
+      </button>
+
+      <button
+        onClick={() => setAppView('zaehler')}
+        className="flex items-center gap-1 px-2.5 py-1 text-xs rounded font-medium transition-colors"
+        style={{ background: '#1e293b', color: '#64748b', border: '1px solid #334155' }}
+        title="Zählerschrank-Planer (Hager-Stil)"
+      >
+        🏠 Zählerschrank
       </button>
 
       <div className="w-px h-5 bg-slate-700" />

@@ -28,6 +28,7 @@ import { TE_WIDTH_PX, RAIL_X_OFFSET } from '@/utils/teGrid'
 import { placementValidity } from '@/utils/validation'
 import DoorCanvas from '@/components/door/DoorCanvas'
 import { PANEL_CELL } from '@/components/door/PanelComponentRenderer'
+import ZaehlerPlanerApp from '@/components/zaehler/ZaehlerPlanerApp'
 
 export default function App() {
   const [simState, setSimState] = useState<SimulationState | null>(null)
@@ -38,6 +39,7 @@ export default function App() {
   const addPanelComponent = useSchaltschrankStore(s => s.addPanelComponent)
   const rails = useSchaltschrankStore(s => s.schaltschrank.rails)
   const surface = useUIStore(s => s.surface)
+  const appView = useUIStore(s => s.appView)
   const setPlacementPreview = useUIStore(s => s.setPlacementPreview)
 
   useKeyboardShortcuts()
@@ -127,6 +129,9 @@ export default function App() {
   }
 
   const dragDef = dragDefId ? COMPONENT_MAP.get(dragDefId) : null
+
+  // Eigener Bereich: Zählerschrank-Planer (vollständig isoliert, eigener DndContext/Store)
+  if (appView === 'zaehler') return <ZaehlerPlanerApp />
 
   return (
     <DndContext
