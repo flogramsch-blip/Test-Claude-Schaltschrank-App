@@ -16,7 +16,7 @@ interface Props {
 
 const DEVICE_H = 54
 const DEVICE_TOP = 20
-const TE_ROW_TYPES: ZaehlerReihenTyp[] = ['verteiler', 'anschlussraum-oben', 'anschlussraum-unten']
+const TE_ROW_TYPES: ZaehlerReihenTyp[] = ['verteiler', 'anschlussraum-oben', 'anschlussraum-unten', 'apz']
 
 export default function ReiheRenderer({ feld, reihe, x, y, width }: Props) {
   const setReihenTyp = useZaehlerStore(s => s.setReihenTyp)

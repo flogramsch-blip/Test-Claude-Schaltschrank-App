@@ -1,4 +1,5 @@
 import type { ZaehlerFeld } from '@/types/zaehlerschrank'
+import { ZAEHLER_FELD_LABELS } from '@/types/zaehlerschrank'
 import { useZaehlerStore } from '@/store/zaehlerStore'
 import ReiheRenderer from './ReiheRenderer'
 import { feldOriginX, feldHeight, reiheOffsetY, FELD_OUTER_W, FELD_INNER_W, FELD_PADDING, FELD_HEADER } from './zaehlerGeometry'
@@ -22,8 +23,8 @@ export default function FeldRenderer({ feld, index, canRemove }: Props) {
 
       {/* Kopfzeile */}
       <rect x={originX} y={0} width={FELD_OUTER_W} height={FELD_HEADER} rx={4} fill="#e2e8f0" />
-      <text x={originX + FELD_OUTER_W / 2} y={FELD_HEADER - 7} textAnchor="middle" fontSize={11} fill="#334155" fontFamily="monospace" fontWeight="bold">
-        Feld {index + 1}
+      <text x={originX + FELD_OUTER_W / 2} y={FELD_HEADER - 7} textAnchor="middle" fontSize={10} fill="#334155" fontFamily="monospace" fontWeight="bold">
+        {index + 1} · {ZAEHLER_FELD_LABELS[feld.type ?? 'zaehler']}
       </text>
 
       {/* Feld entfernen */}

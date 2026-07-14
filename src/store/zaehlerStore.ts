@@ -1,24 +1,29 @@
 import { create } from 'zustand'
 import { produce } from 'immer'
 import { v4 as uuidv4 } from 'uuid'
-import type { ZaehlerschrankProjekt, ZaehlerFeld, ZaehlerReihe, ZaehlerReihenTyp } from '@/types/zaehlerschrank'
+import type { ZaehlerschrankProjekt, ZaehlerFeld, ZaehlerReihe, ZaehlerReihenTyp, ZaehlerFeldTyp } from '@/types/zaehlerschrank'
 import { ZAEHLER_COMPONENT_MAP, METER_DEVICE_IDS } from '@/data/zaehlerComponents'
 import { checkTECollision } from '@/utils/validation'
 import { FELD_TE } from '@/components/zaehler/zaehlerGeometry'
 
 const AUTOSAVE_KEY = 'zaehlerschrank-autosave-v1'
 
-function createDefaultFeld(): ZaehlerFeld {
-  const typ = (type: ZaehlerReihenTyp): ZaehlerReihe => ({ id: uuidv4(), type, devices: [] })
+/** Reihen-Startlayout je Feldtyp (Reihen bleiben danach frei umstellbar). */
+const FELD_LAYOUTS: Record<ZaehlerFeldTyp, ZaehlerReihenTyp[]> = {
+  zaehler:        ['anschlussraum-oben', 'zaehlerplatz', 'apz', 'anschlussraum-unten'],
+  verteiler:      ['verteiler', 'verteiler', 'verteiler', 'verteiler', 'verteiler'],
+  multimedia:     ['verteiler', 'verteiler', 'verteiler', 'verteiler'],
+  lastmanagement: ['anschlussraum-oben', 'verteiler', 'verteiler', 'apz'],
+  leer:           ['reserve', 'reserve', 'reserve', 'reserve'],
+  schrankgehaeuse:['reserve', 'reserve', 'reserve', 'reserve', 'reserve'],
+  einspeise:      ['anschlussraum-oben', 'apz', 'anschlussraum-unten'],
+}
+
+export function createFeld(type: ZaehlerFeldTyp): ZaehlerFeld {
   return {
     id: uuidv4(),
-    reihen: [
-      typ('anschlussraum-oben'),
-      typ('zaehlerplatz'),
-      typ('verteiler'),
-      typ('verteiler'),
-      typ('anschlussraum-unten'),
-    ],
+    type,
+    reihen: FELD_LAYOUTS[type].map(t => ({ id: uuidv4(), type: t, devices: [] } as ZaehlerReihe)),
   }
 }
 
@@ -26,10 +31,16 @@ export function createDefaultProjekt(): ZaehlerschrankProjekt {
   return {
     id: uuidv4(),
     name: 'Zählerschrank EFH',
-    felder: [createDefaultFeld()],
+    felder: [createFeld('zaehler')],
     createdAt: new Date().toISOString(),
     modifiedAt: new Date().toISOString(),
   }
+}
+
+/** Ältere Autosaves ohne `feld.type` verträglich machen. */
+function normalizeProjekt(p: ZaehlerschrankProjekt): ZaehlerschrankProjekt {
+  for (const f of p.felder) if (!f.type) f.type = 'zaehler'
+  return p
 }
 
 function loadAutosave(): ZaehlerschrankProjekt | null {
@@ -37,7 +48,7 @@ function loadAutosave(): ZaehlerschrankProjekt | null {
     const raw = localStorage.getItem(AUTOSAVE_KEY)
     if (!raw) return null
     const data = JSON.parse(raw)
-    if (data && Array.isArray(data.felder)) return data as ZaehlerschrankProjekt
+    if (data && Array.isArray(data.felder)) return normalizeProjekt(data as ZaehlerschrankProjekt)
   } catch { /* ignore */ }
   return null
 }
@@ -62,7 +73,7 @@ interface ZaehlerStore {
   selectedInstanceId: string | null
   preview: ZaehlerPreview | null
 
-  addFeld: () => void
+  addFeld: (type: ZaehlerFeldTyp) => void
   removeFeld: (feldId: string) => void
   setReihenTyp: (feldId: string, reiheId: string, typ: ZaehlerReihenTyp) => void
   addDevice: (feldId: string, reiheId: string, definitionId: string, tePosition: number) => string | null
@@ -127,9 +138,9 @@ export const useZaehlerStore = create<ZaehlerStore>((set, get) => ({
   selectedInstanceId: null,
   preview: null,
 
-  addFeld: () => set(produce((d: ZaehlerStore) => {
+  addFeld: (type) => set(produce((d: ZaehlerStore) => {
     d.past = pushHistory(d.past, d.projekt); d.future = []
-    d.projekt.felder.push(createDefaultFeld())
+    d.projekt.felder.push(createFeld(type))
     d.projekt.modifiedAt = new Date().toISOString()
   })),
 
@@ -239,7 +250,7 @@ export const useZaehlerStore = create<ZaehlerStore>((set, get) => ({
   importJSON: (json) => {
     const data = JSON.parse(json) as ZaehlerschrankProjekt
     if (!Array.isArray(data.felder)) throw new Error('Ungültiges Zählerschrank-Projekt')
-    set({ projekt: data, past: [], future: [], selectedInstanceId: null, preview: null })
+    set({ projekt: normalizeProjekt(data), past: [], future: [], selectedInstanceId: null, preview: null })
   },
 }))
 

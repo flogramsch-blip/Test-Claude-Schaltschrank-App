@@ -36,14 +36,13 @@ export function analyzeZaehlerschrank(p: ZaehlerschrankProjekt): ZaehlerIssue[] 
   if (!hasSLS) {
     issues.push({ severity: 'error', message: 'Kein SLS-Schalter (selektiver Hauptleitungsschutzschalter) vorhanden.', norm: 'VDE-AR-N 4100 §7' })
   } else {
-    // (c) SLS-Position: sollte im oberen Anschlussraum über dem Zählerplatz liegen
-    const slsWellPlaced = p.felder.some(f => {
-      const idxSLS = f.reihen.findIndex(r => r.devices.some(d => d.definitionId === 'sls-3p'))
-      const idxZ = f.reihen.findIndex(r => r.type === 'zaehlerplatz')
-      return idxSLS !== -1 && idxZ !== -1 && idxSLS < idxZ
-    })
+    // (c) SLS-Position: gehört ins APZ-Feld oder in einen Anschlussraum (plombierbarer Bereich)
+    const slsWellPlaced = p.felder.some(f =>
+      f.reihen.some(r =>
+        (r.type === 'apz' || r.type === 'anschlussraum-oben' || r.type === 'anschlussraum-unten') &&
+        r.devices.some(d => d.definitionId === 'sls-3p')))
     if (!slsWellPlaced) {
-      issues.push({ severity: 'warning', message: 'SLS sollte im oberen Anschlussraum vor (über) dem Zähler sitzen.', norm: 'VDE-AR-N 4100' })
+      issues.push({ severity: 'warning', message: 'SLS sollte im APZ-Feld bzw. Anschlussraum (plombierbarer Bereich) sitzen.', norm: 'VDE-AR-N 4100' })
     }
   }
 

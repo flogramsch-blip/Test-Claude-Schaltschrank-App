@@ -146,7 +146,7 @@ export default function ZaehlerPlanerApp() {
           <div className="flex-1" />
           <button onClick={undo} className="px-2 py-1 text-xs rounded font-mono" style={{ background: '#ffffff18', color: '#cbd5e1' }} title="Rückgängig">↩</button>
           <button onClick={redo} className="px-2 py-1 text-xs rounded font-mono" style={{ background: '#ffffff18', color: '#cbd5e1' }} title="Wiederholen">↪</button>
-          <button onClick={addFeld} className="px-2.5 py-1 text-xs rounded font-medium" style={{ background: '#2563eb', color: '#fff' }}>+ Feld</button>
+          <button onClick={() => addFeld('zaehler')} className="px-2.5 py-1 text-xs rounded font-medium" style={{ background: '#2563eb', color: '#fff' }} title="Zählerfeld hinzufügen (weitere Typen über das + am Schrank)">+ Zählerfeld</button>
           <button onClick={() => fileRef.current?.click()} className="px-2.5 py-1 text-xs rounded font-medium" style={{ background: '#ffffff18', color: '#cbd5e1' }}>Laden</button>
           <button onClick={handleExport} className="px-2.5 py-1 text-xs rounded font-medium" style={{ background: '#ffffff18', color: '#cbd5e1' }}>Speichern</button>
           <button onClick={() => { if (confirm('Zählerschrank zurücksetzen?')) reset() }} className="px-2.5 py-1 text-xs rounded font-medium" style={{ background: '#ffffff18', color: '#fca5a5' }}>Reset</button>

@@ -1,7 +1,16 @@
 import { useRef, useState } from 'react'
 import { useZaehlerStore } from '@/store/zaehlerStore'
+import type { ZaehlerFeldTyp } from '@/types/zaehlerschrank'
+import { ZAEHLER_FELD_LABELS } from '@/types/zaehlerschrank'
 import FeldRenderer from './FeldRenderer'
 import { feldOriginX, feldHeight, FELD_GAP } from './zaehlerGeometry'
+
+// Reihenfolge/Gruppierung wie im Hager-Menü (Gehäuse-Typen abgesetzt)
+const FELD_MENU: Array<{ type: ZaehlerFeldTyp; bold?: boolean; gap?: boolean }> = [
+  { type: 'zaehler' }, { type: 'verteiler' }, { type: 'multimedia' },
+  { type: 'lastmanagement' }, { type: 'leer' },
+  { type: 'schrankgehaeuse', bold: true, gap: true }, { type: 'einspeise', bold: true },
+]
 
 export default function ZaehlerCanvas() {
   const projekt = useZaehlerStore(s => s.projekt)
@@ -9,7 +18,9 @@ export default function ZaehlerCanvas() {
   const setSelected = useZaehlerStore(s => s.setSelected)
   const [zoom, setZoom] = useState(1)
   const [pan, setPan] = useState({ x: 40, y: 40 })
+  const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null)
   const svgRef = useRef<SVGSVGElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const panStart = useRef<{ x: number; y: number } | null>(null)
 
   function onWheel(e: React.WheelEvent) {
@@ -25,8 +36,14 @@ export default function ZaehlerCanvas() {
   const plusX = feldOriginX(felder.length) - FELD_GAP / 2 - 4
   const plusY = maxH / 2
 
+  function openFeldMenu() {
+    const rect = containerRef.current?.getBoundingClientRect()
+    if (!rect) return
+    setMenuPos({ x: rect.left + pan.x + zoom * (plusX + 18), y: rect.top + pan.y + zoom * plusY })
+  }
+
   return (
-    <div className="relative flex-1 overflow-hidden" style={{ background: '#e2e8f0' }} onContextMenu={e => e.preventDefault()}>
+    <div ref={containerRef} className="relative flex-1 overflow-hidden" style={{ background: '#e2e8f0' }} onContextMenu={e => e.preventDefault()}>
       <svg
         ref={svgRef}
         id="zaehler-svg"
@@ -55,8 +72,8 @@ export default function ZaehlerCanvas() {
             <FeldRenderer key={feld.id} feld={feld} index={i} canRemove={felder.length > 1} />
           ))}
 
-          {/* Feld hinzufügen */}
-          <g onClick={e => { e.stopPropagation(); addFeld() }} style={{ cursor: 'pointer' }}>
+          {/* Feld hinzufügen (öffnet Feldtyp-Menü) */}
+          <g onClick={e => { e.stopPropagation(); openFeldMenu() }} style={{ cursor: 'pointer' }}>
             <circle cx={plusX} cy={plusY} r={16} fill="#fff" stroke="#2563eb" strokeWidth={1.5} />
             <line x1={plusX - 7} y1={plusY} x2={plusX + 7} y2={plusY} stroke="#2563eb" strokeWidth={2} />
             <line x1={plusX} y1={plusY - 7} x2={plusX} y2={plusY + 7} stroke="#2563eb" strokeWidth={2} />
@@ -68,6 +85,34 @@ export default function ZaehlerCanvas() {
       <div className="absolute top-3 right-3 text-xs px-2 py-1 rounded" style={{ background: '#ffffffcc', color: '#64748b', border: '1px solid #cbd5e1' }}>
         Zoom: {Math.round(zoom * 100)}%
       </div>
+
+      {/* Feldtyp-Menü (Popover am „+") */}
+      {menuPos && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setMenuPos(null)} onContextMenu={e => { e.preventDefault(); setMenuPos(null) }} />
+          <div
+            className="fixed z-50 rounded-lg shadow-2xl py-2"
+            style={{ left: menuPos.x, top: menuPos.y, transform: 'translateY(-50%)', background: '#fff', border: '1px solid #cbd5e1', minWidth: 210 }}
+          >
+            {FELD_MENU.map(item => (
+              <button
+                key={item.type}
+                onClick={() => { addFeld(item.type); setMenuPos(null) }}
+                className="block w-full text-left px-4 py-2 text-sm hover:bg-slate-100"
+                style={{
+                  color: item.bold ? '#1d4ed8' : '#334155',
+                  fontWeight: item.bold ? 700 : 400,
+                  borderTop: item.gap ? '1px solid #e2e8f0' : undefined,
+                  marginTop: item.gap ? 4 : undefined,
+                  paddingTop: item.gap ? 10 : undefined,
+                }}
+              >
+                {ZAEHLER_FELD_LABELS[item.type]}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   )
 }

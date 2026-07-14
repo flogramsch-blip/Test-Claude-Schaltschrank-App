@@ -14,6 +14,7 @@ export const ROW_INSET_X = 30                   // linker Innenabstand (Platz f√
 export const ROW_HEIGHTS: Record<ZaehlerReihenTyp, number> = {
   'anschlussraum-oben': 92,
   'zaehlerplatz': 188,
+  'apz': 92,
   'verteiler': 82,
   'anschlussraum-unten': 92,
   'reserve': 78,
